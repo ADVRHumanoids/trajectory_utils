@@ -208,7 +208,8 @@ public:
      */
     bool isInited();
 
-private:
+
+protected:
     double _dt;
     double _time;
     double _eq_radius;

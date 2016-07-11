@@ -59,9 +59,6 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const 
 
 bool trajectory_generator::addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T)
 {
-    KDL::Frame _start = start; normalizeQuaternion(_start);
-    KDL::Frame _end = end; normalizeQuaternion(_end);
-
     boost::shared_ptr<KDL::Path> _tmp_path = createLinePath(start, end);
     double max_vel = 0.0;
     double max_acc = 0.0;
@@ -79,7 +76,7 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const 
     boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
     switch (vel_profile) {
     case BANG_COAST_BANG:
-        if(checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
+        if(!checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
             return false;
         _velocity_profile = createTrapezoidalVelProfile(max_vel, max_acc, _path->PathLength());
         break;
@@ -107,7 +104,7 @@ const boost::shared_ptr<KDL::Trajectory_Composite>& trajectory_generator::getTra
 boost::shared_ptr<KDL::Path> trajectory_generator::createLinePath(const KDL::Frame& start, const KDL::Frame& end)
 {
     KDL::Frame _start = start; normalizeQuaternion(_start);
-    KDL::Frame _end = start; normalizeQuaternion(_end);
+    KDL::Frame _end = end; normalizeQuaternion(_end);
 
     boost::shared_ptr<KDL::Path_Line> _linear_path;
     _linear_path.reset(new KDL::Path_Line(_start, _end, new KDL::RotationalInterpolation_SingleAxis(), _eq_radius));
@@ -207,3 +204,4 @@ bool trajectory_generator::isRunning(){
 bool trajectory_generator::isInited(){
     return _is_inited;
 }
+
