@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
 #include <idynutils/cartesian_utils.h>
+#include <fstream>
 
 #define dt 0.001
 
@@ -75,6 +76,58 @@ public:
     virtual void TearDown() {
 
     }
+
+    void logFrame(const KDL::Frame& F) {
+        _stored_frames.push_back(F);
+    }
+
+    void writeMatlabFile(double k = -1) {
+        std::string file_name = "stored_trj.m";
+        file1.open(file_name.c_str());
+        file1<<"trj = {"<<std::endl;
+
+        for(unsigned int i = 0; i < _stored_frames.size(); ++i){
+            KDL::Frame T = _stored_frames[i];
+            file1<<"["<<T(0,0)<<" "<<T(0,1)<<" "<<T(0,2)<<" "<<T(0,3)<<"; "<<
+                   T(1,0)<<" "<<T(1,1)<<" "<<T(1,2)<<" "<<T(1,3)<<"; "<<
+                   T(2,0)<<" "<<T(2,1)<<" "<<T(2,2)<<" "<<T(2,3)<<"; "<<
+                   T(3,0)<<" "<<T(3,1)<<" "<<T(3,2)<<" "<<T(3,3)<<"],"<<std::endl;
+        }
+        file1<<"};"<<std::endl;
+        file1.close();
+
+        file_name = "plot_trj.m";
+        file2.open(file_name.c_str());
+
+        file2<<"clear all; clc"<<std::endl;
+        file2<<"run('startup_rvc.m') %Needs Matlab Robotics Toolbox to run!"<<std::endl;
+        file2<<"run('stored_trj.m')"<<std::endl;
+
+        file2<<"X = []; Y = []; Z = [];"<<std::endl;
+        file2<<"for i = 1:1:length(trj)"<<std::endl;
+        file2<<"    X(i) = trj{i}(1,4);"<<std::endl;
+        file2<<"    Y(i) = trj{i}(2,4);"<<std::endl;
+        file2<<"    Z(i) = trj{i}(3,4);"<<std::endl;
+        file2<<"end"<<std::endl;
+
+        file2<<"plot3(X,Y,Z,'.'); axis([-2,2,-2,2,-2,2]); hold on"<<std::endl;
+        file2<<"trplot(trj{1},'axis',[-2,2,-2,2,-2,2],'color',[0 0 0]); hold on;"<<std::endl;
+        file2<<"trplot(trj{length(trj)},'axis',[-2,2,-2,2,-2,2],'color',[0 0 0]); hold on;"<<std::endl;
+
+        file2<<"for i = 2:"<<k<<":length(trj)-1"<<std::endl;
+        file2<<"    trplot(trj{i},'axis',[-2,2,-2,2,-2,2]); hold on;"<<std::endl;
+        file2<<"end"<<std::endl;
+        file2.close();
+    }
+
+
+
+    std::ofstream file1;
+    std::ofstream file2;
+
+
+
+    std::vector<KDL::Frame> _stored_frames;
 
     test_trajectory_generator trj;
     KDL::Frame start;
@@ -224,6 +277,14 @@ TEST_F(testLinearTrj, test2Lines){
 
     pose = this->trj.Pos(2.0);
     tests_utils::KDLFramesAreEqual(pose, this->way_points[2]);
+
+    this->trj.resetInternalTime();
+    for(unsigned int i = 0; i < 2000; ++i)
+    {
+        this->trj.updateTrj();
+        this->logFrame(this->trj.Pos());
+    }
+    writeMatlabFile(500);
 }
 
 }
