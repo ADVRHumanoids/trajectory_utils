@@ -17,6 +17,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
+#ifndef __TRAJECTORY_UTILS_H__
+#define __TRAJECTORY_UTILS_H__
+
 #include <kdl/path_circle.hpp>
 #include <kdl/path_line.hpp>
 #include <kdl/path_point.hpp>
@@ -236,3 +239,5 @@ protected:
 };
 
 }
+
+#endif
