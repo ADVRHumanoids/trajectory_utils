@@ -112,6 +112,28 @@ boost::shared_ptr<KDL::Path> trajectory_generator::createLinePath(const KDL::Fra
     return _linear_path;
 }
 
+boost::shared_ptr<KDL::Path> trajectory_generator::createArcPath(const KDL::Frame& start_pose,
+                                           const KDL::Rotation& final_rotation,
+                                           const double angle_of_rotation,
+                                           const KDL::Vector& circle_center,
+                                           const KDL::Vector& plane_normal)
+{
+
+    KDL::Vector x(start_pose.p - circle_center);
+    x.Normalize();
+    KDL::Vector z(plane_normal);
+    z.Normalize();
+    KDL::Vector tmpv(z*x);
+    KDL::Vector V_base_p(tmpv + circle_center);
+
+    boost::shared_ptr<KDL::Path_Circle> _circle_path;
+    _circle_path.reset(new KDL::Path_Circle(start_pose, circle_center, V_base_p,
+                       final_rotation, angle_of_rotation,
+                       new KDL::RotationalInterpolation_SingleAxis(), _eq_radius));
+
+    return _circle_path;
+}
+
 boost::shared_ptr<KDL::VelocityProfile> trajectory_generator::createTrapezoidalVelProfile(const double max_vel, const double max_acc,
                                                                                           const double L)
 {

@@ -219,6 +219,12 @@ protected:
 
     boost::shared_ptr<KDL::Path> createLinePath(const KDL::Frame& start, const KDL::Frame& end);
 
+    boost::shared_ptr<KDL::Path> createArcPath(const KDL::Frame& start_pose,
+                                               const KDL::Rotation& final_rotation,
+                                               const double angle_of_rotation,
+                                               const KDL::Vector& circle_center,
+                                               const KDL::Vector& plane_normal);
+
     boost::shared_ptr<KDL::VelocityProfile> createTrapezoidalVelProfile(const double max_vel, const double max_acc,
                                                                         const double L);
 

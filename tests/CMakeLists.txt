@@ -26,6 +26,7 @@ add_custom_command( TARGET trajectory_utils POST_BUILD
                MAIN_DEPENDENCY trajectory_utils
                DEPENDS
                testLinearTrj
+               testArcTrj
                )
 
 SET(TestLibs trajectory_utils ${GTEST_BOTH_LIBRARIES} ${idynutils_LIBRARIES} ${orocos_kdl_LIBRARIES} ${kdl_parser_LIBRARIES})
@@ -34,6 +35,11 @@ ADD_EXECUTABLE(testLinearTrj     testLinearTrj.cpp)
 TARGET_LINK_LIBRARIES(testLinearTrj ${TestLibs})
 add_dependencies(testLinearTrj GTest-ext trajectory_utils)
 
+ADD_EXECUTABLE(testArcTrj     testArcTrj.cpp)
+TARGET_LINK_LIBRARIES(testArcTrj ${TestLibs})
+add_dependencies(testArcTrj GTest-ext trajectory_utils)
+
 add_test(NAME trajectory_utils_linear_trajectories COMMAND testLinearTrj)
+add_test(NAME trajectory_utils_arc_trajectories COMMAND testArcTrj)
 
 
