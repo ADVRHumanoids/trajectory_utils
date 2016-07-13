@@ -117,7 +117,60 @@ public:
 
 };
 
+TEST_F(testArcTrj, testCreateArcPath2)
+{
+    this->angle = M_PI;
+    this->end_rot.DoRotX(M_PI_2);
+    boost::shared_ptr<KDL::Path> arc_path = this->trj._createArcPath(this->start, this->end_rot,
+                                                                     this->angle, this->circle_center,
+                                                                     this->plane_normal);
+    EXPECT_FALSE(arc_path==NULL);
+
+    std::cout<<"Path lenght: "<<arc_path->PathLength()<<std::endl;
+
+    KDL::Frame final_pose = arc_path->Pos(arc_path->PathLength());
+    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+
+    KDL::Frame expected_final_pose; expected_final_pose.Identity();
+    expected_final_pose.M.DoRotX(M_PI_2);
+    expected_final_pose.p.x(0.);
+    expected_final_pose.p.y(2.);
+    expected_final_pose.p.z(0.);
+
+    tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
+
+    for(unsigned int i = 0; i < int(arc_path->PathLength()*100); ++i)
+        this->logFrame(arc_path->Pos(i/100.));
+    this->writeMatlabFile(int((arc_path->PathLength()*100)/2.));
+}
+
 TEST_F(testArcTrj, testCreateArcPath)
+{
+    this->end_rot.DoRotX(M_PI_2);
+    boost::shared_ptr<KDL::Path> arc_path = this->trj._createArcPath(this->start, this->end_rot,
+                                                                     this->angle, this->circle_center,
+                                                                     this->plane_normal);
+    EXPECT_FALSE(arc_path==NULL);
+
+    std::cout<<"Path lenght: "<<arc_path->PathLength()<<std::endl;
+
+    KDL::Frame final_pose = arc_path->Pos(arc_path->PathLength());
+    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+
+    KDL::Frame expected_final_pose; expected_final_pose.Identity();
+    expected_final_pose.M.DoRotX(M_PI_2);
+    expected_final_pose.p.x(0.);
+    expected_final_pose.p.y(1.);
+    expected_final_pose.p.z(-1.);
+
+    tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
+
+    for(unsigned int i = 0; i < int(arc_path->PathLength()*100); ++i)
+        this->logFrame(arc_path->Pos(i/100.));
+    this->writeMatlabFile(int((arc_path->PathLength()*100)/2.));
+}
+
+TEST_F(testArcTrj, testCreateArcPathNoRotation)
 {
     boost::shared_ptr<KDL::Path> arc_path = this->trj._createArcPath(this->start, this->end_rot,
                                                                      this->angle, this->circle_center,
