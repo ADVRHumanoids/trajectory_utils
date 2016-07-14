@@ -34,11 +34,13 @@ FIND_PACKAGE(Boost REQUIRED)
 INCLUDE_DIRECTORIES(include ${orocos_kdl_DIRS} ${kdl_parser_INCLUDE_DIRS}
                             ${idynutils_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
-file(GLOB_RECURSE idynutils_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils" *.h*)
+file(GLOB_RECURSE idynutils_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils" *.h*
+"${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/paths" *.h*)
 
-ADD_LIBRARY(trajectory_utils SHARED src/trajectory_utils.cpp ${trajectory_utils_INCLUDES})
+ADD_LIBRARY(trajectory_utils SHARED src/trajectory_utils.cpp src/paths/path_circle_fix.cpp
+${trajectory_utils_INCLUDES})
 
-TARGET_LINK_LIBRARIES(trajectory_utils PRIVATE ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
+TARGET_LINK_LIBRARIES(trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
 ${idynutils_LIBRARIES} ${Boost_LIBRARIES})
 
 ########################################################################

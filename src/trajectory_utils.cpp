@@ -56,11 +56,36 @@ bool trajectory_generator::addArcTrj(const trajectory_utils::velocity_profile ve
         break;
     }
 
+
     boost::shared_ptr<KDL::Trajectory_Segment> _trj_segment;
     _trj_segment.reset(new KDL::Trajectory_Segment(_path.get()->Clone(),
                                                    _velocity_profile.get()->Clone()));
 
+
+
     _trj->Add(_trj_segment.get()->Clone());
+
+//    std::cout<<"Path length: "<<_path->PathLength()<<std::endl;
+//    cartesian_utils::printKDLFrame(_path->Pos(_path->PathLength()));
+//    std::cout<<"Duration: "<<_velocity_profile->Duration()<<std::endl;
+//    std::cout<<"Lenght from vel profile: "<<_velocity_profile->Pos(_velocity_profile->Duration())<<std::endl;
+//    std::cout<<"From path:"<<std::endl;cartesian_utils::printKDLFrame(_path->Pos(_velocity_profile->Pos(_velocity_profile->Duration())));
+
+//    std::cout<<"From trj_segment:"<<std::endl;
+//    cartesian_utils::printKDLFrame(_trj_segment->Pos(_trj_segment->Duration()));
+//    std::cout<<"_trj_segment duration: "<<_trj_segment->Duration()<<std::endl;
+//    std::cout<<"From trj_segment2:"<<std::endl;
+//    KDL::Path* p = _trj_segment->GetPath();
+//    KDL::VelocityProfile* v = _trj_segment->GetProfile();
+//    cartesian_utils::printKDLFrame(p->Pos(v->Pos(v->Duration())));
+//    std::cout<<"_trj_segment2 duration: "<<v->Duration()<<std::endl;
+
+//    std::cout<<"From trj:"<<std::endl;
+//    cartesian_utils::printKDLFrame(_trj->Pos(_trj->Duration()));
+//    std::cout<<"_trj duration: "<<_trj->Duration()<<std::endl;
+
+
+//    std::cout<<std::endl;
 
     _is_inited = true;
     _time = 0.0;
@@ -168,19 +193,24 @@ boost::shared_ptr<KDL::Path> trajectory_generator::createArcPath(const KDL::Fram
                                            const KDL::Vector& plane_normal)
 {
 
+    KDL::Frame _start_pose = start_pose;
+    normalizeQuaternion(_start_pose);
+    KDL::Frame _final_rot; _final_rot.Identity();
+    _final_rot.M = final_rotation;
+    normalizeQuaternion(_final_rot);
+
     KDL::Vector x(start_pose.p - circle_center);
-    x.Normalize();
+    double r = x.Normalize();
     KDL::Vector z(plane_normal);
     z.Normalize();
     KDL::Vector tmpv(z*x);
     KDL::Vector V_base_p(tmpv + circle_center);
 
-    KDL::Frame _start_pose = start_pose;
-    normalizeQuaternion(_start_pose);
 
-    boost::shared_ptr<KDL::Path_Circle> _circle_path;
-    _circle_path.reset(new KDL::Path_Circle(_start_pose, circle_center, V_base_p,
-                       final_rotation, angle_of_rotation,
+
+    boost::shared_ptr<KDL::Path_Circle_Fix> _circle_path;
+    _circle_path.reset(new KDL::Path_Circle_Fix(_start_pose, circle_center, V_base_p,
+                       _final_rot.M, angle_of_rotation,
                        new KDL::RotationalInterpolation_SingleAxis(), _eq_radius));
 
     return _circle_path;

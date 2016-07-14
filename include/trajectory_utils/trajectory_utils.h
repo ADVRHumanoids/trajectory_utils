@@ -20,7 +20,7 @@
 #ifndef __TRAJECTORY_UTILS_H__
 #define __TRAJECTORY_UTILS_H__
 
-#include <kdl/path_circle.hpp>
+#include "paths/path_circle_fix.hpp"
 #include <kdl/path_line.hpp>
 #include <kdl/path_point.hpp>
 #include <kdl/path_composite.hpp>
