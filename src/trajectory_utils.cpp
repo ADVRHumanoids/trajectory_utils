@@ -65,28 +65,6 @@ bool trajectory_generator::addArcTrj(const trajectory_utils::velocity_profile ve
 
     _trj->Add(_trj_segment.get()->Clone());
 
-//    std::cout<<"Path length: "<<_path->PathLength()<<std::endl;
-//    cartesian_utils::printKDLFrame(_path->Pos(_path->PathLength()));
-//    std::cout<<"Duration: "<<_velocity_profile->Duration()<<std::endl;
-//    std::cout<<"Lenght from vel profile: "<<_velocity_profile->Pos(_velocity_profile->Duration())<<std::endl;
-//    std::cout<<"From path:"<<std::endl;cartesian_utils::printKDLFrame(_path->Pos(_velocity_profile->Pos(_velocity_profile->Duration())));
-
-//    std::cout<<"From trj_segment:"<<std::endl;
-//    cartesian_utils::printKDLFrame(_trj_segment->Pos(_trj_segment->Duration()));
-//    std::cout<<"_trj_segment duration: "<<_trj_segment->Duration()<<std::endl;
-//    std::cout<<"From trj_segment2:"<<std::endl;
-//    KDL::Path* p = _trj_segment->GetPath();
-//    KDL::VelocityProfile* v = _trj_segment->GetProfile();
-//    cartesian_utils::printKDLFrame(p->Pos(v->Pos(v->Duration())));
-//    std::cout<<"_trj_segment2 duration: "<<v->Duration()<<std::endl;
-
-//    std::cout<<"From trj:"<<std::endl;
-//    cartesian_utils::printKDLFrame(_trj->Pos(_trj->Duration()));
-//    std::cout<<"_trj duration: "<<_trj->Duration()<<std::endl;
-
-
-//    std::cout<<std::endl;
-
     _is_inited = true;
     _time = 0.0;
 
