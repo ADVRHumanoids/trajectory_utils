@@ -61,6 +61,29 @@ public:
      */
     void resetTrajectory();
 
+    bool addArcTrj(const KDL::Frame &start_pose, const KDL::Rotation &final_rotation,
+                   const double angle_of_rotation,
+                   const KDL::Vector &circle_center, const KDL::Vector &plane_normal,
+                   const double T);
+
+    /**
+     * @brief addArcTrj add an arc trajectory
+     * @param vel_profile desired velocity profile
+     * @param start_pose on the arc trajectory
+     * @param final_rotation final rotation at the end of the arc trajectory
+     * @param angle_of_rotation amount of rotation (arc trajectory)
+     * @param circle_center center of the arc trajectory
+     * @param plane_normal normal of the plane where the arc trajecotry is
+     * @param max_vel max velocity of the trajectory
+     * @param max_acc max acceleration of the trajectory
+     * @return true if the trajectories has been added
+     */
+    bool addArcTrj(const velocity_profile vel_profile,
+                   const KDL::Frame& start_pose, const KDL::Rotation& final_rotation,
+                   const double angle_of_rotation,
+                   const KDL::Vector& circle_center, const KDL::Vector& plane_normal,
+                   const double max_vel, const double max_acc);
+
     /**
      * @brief addLineTrj add a set of linear trajectories, specified by way-points and each
      * costituted by a BANG_COAST_BANG velocity profile. Here we assume that the BANG phases least as
