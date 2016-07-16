@@ -54,7 +54,7 @@ public:
      * @brief getTrajectory
      * @return the sharep pointer to the KDL trajectory object
      */
-    const boost::shared_ptr<KDL::Trajectory_Composite>& getTrajectory();
+    boost::shared_ptr<KDL::Trajectory_Composite>& getTrajectory();
 
     /**
      * @brief resetTrajectory clear the trajectory object (all the stored trajectories are deleted)
