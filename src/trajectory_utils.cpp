@@ -148,7 +148,7 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const 
     return _is_inited;
 }
 
-boost::shared_ptr<KDL::Trajectory_Composite>& trajectory_generator::getTrajectory()
+boost::shared_ptr<KDL::Trajectory_Composite> trajectory_generator::getTrajectory()
 {
     return _trj;
 }
