@@ -39,7 +39,8 @@
 namespace trajectory_utils{
 
 enum velocity_profile{
-    BANG_COAST_BANG
+    BANG_COAST_BANG,
+    SPLINE_5
 };
 
 class trajectory_generator{
@@ -150,6 +151,27 @@ public:
     bool addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T);
 
     /**
+     * @brief addLineTrj add a trajectory constituted by a linear path and a specified velocity profile.
+     *
+     * NOTE that if vel_profile is BANG_COAST_BANG then
+     * addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T) is used and the parameters
+     * v0, v1, a0, a1 are not used
+     *
+     * @param vel_profile desired velocity profile
+     * @param start Frame
+     * @param end Frame
+     * @param T time of the trajectory
+     * @param v0 initial velocity
+     * @param v1 final velocity
+     * @param a0 initial acceleration
+     * @param a1 final acceleration
+     * @return true if the trajectory has been added
+     */
+    bool addLineTrj(const velocity_profile vel_profile,
+                    const KDL::Frame& start, const KDL::Frame& end, const double T,
+                    const double v0, const double v1, const double a0, const double a1);
+
+    /**
      * @brief Pos return a frame from the trajectory at time t
      * @param t time
      * @return a frame
@@ -253,6 +275,13 @@ protected:
 
     boost::shared_ptr<KDL::VelocityProfile> createTrapezoidalVelProfile(const double max_vel, const double max_acc,
                                                                         const double L);
+
+    boost::shared_ptr<KDL::VelocityProfile> createSplineVelProfile(const double L, const double T);
+    boost::shared_ptr<KDL::VelocityProfile> createSplineVelProfile(const double L, const double T,
+                                                                   const double v0, const double v1);
+    boost::shared_ptr<KDL::VelocityProfile> createSplineVelProfile(const double L, const double T,
+                                                                   const double v0, const double v1,
+                                                                   const double a0, const double a1);
 
    bool checkIfCoastPhaseExists(const double max_vel, const double max_acc, const double L);
 

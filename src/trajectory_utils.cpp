@@ -126,11 +126,48 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const 
     boost::shared_ptr<KDL::Path> _path = createLinePath(start, end);
 
     boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
+    double L = 0.0;
+    double T = 0.0;
     switch (vel_profile) {
     case BANG_COAST_BANG:
         if(!checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
             return false;
         _velocity_profile = createTrapezoidalVelProfile(max_vel, max_acc, _path->PathLength());
+        break;
+    case SPLINE_5:
+        L = _path->PathLength();
+        T = (3./2.)*(L/max_vel);
+        _velocity_profile = createSplineVelProfile(L, T, 0.0, 0.0);
+        break;
+    default:
+        break;
+    }
+
+    boost::shared_ptr<KDL::Trajectory_Segment> _trj_segment;
+    _trj_segment.reset(new KDL::Trajectory_Segment(_path.get()->Clone(),
+                                                   _velocity_profile.get()->Clone()));
+
+    _trj->Add(_trj_segment.get()->Clone());
+
+    _is_inited = true;
+    _time = 0.0;
+
+    return _is_inited;
+}
+
+bool trajectory_generator::addLineTrj(const velocity_profile vel_profile,
+                                      const KDL::Frame& start, const KDL::Frame& end, const double T,
+                                      const double v0, const double v1, const double a0, const double a1)
+{
+    boost::shared_ptr<KDL::Path> _path;
+    boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
+    switch (vel_profile) {
+    case BANG_COAST_BANG:
+        return addLineTrj(start, end, T);
+        break;
+    case SPLINE_5:
+        _path = createLinePath(start, end);
+        _velocity_profile = createSplineVelProfile(_path->PathLength(), T, v0, v1, a0, a1);
         break;
     default:
         break;
@@ -200,6 +237,36 @@ boost::shared_ptr<KDL::VelocityProfile> trajectory_generator::createTrapezoidalV
     boost::shared_ptr<KDL::VelocityProfile_Trap> _velocity_profile;
     _velocity_profile.reset(new KDL::VelocityProfile_Trap(max_vel, max_acc));
     _velocity_profile->SetProfile(0, L);
+
+    return _velocity_profile;
+}
+
+boost::shared_ptr<KDL::VelocityProfile> trajectory_generator::createSplineVelProfile(const double L, const double T)
+{
+    boost::shared_ptr<KDL::VelocityProfile_Spline> _velocity_profile;
+    _velocity_profile.reset(new KDL::VelocityProfile_Spline());
+    _velocity_profile->SetProfileDuration(0, L, T);
+
+    return _velocity_profile;
+}
+
+boost::shared_ptr<KDL::VelocityProfile> trajectory_generator::createSplineVelProfile(const double L, const double T,
+                                                                                     const double v0, const double v1)
+{
+    boost::shared_ptr<KDL::VelocityProfile_Spline> _velocity_profile;
+    _velocity_profile.reset(new KDL::VelocityProfile_Spline());
+    _velocity_profile->SetProfileDuration(0, v0, L, v1, T);
+
+    return _velocity_profile;
+}
+
+boost::shared_ptr<KDL::VelocityProfile> trajectory_generator::createSplineVelProfile(const double L, const double T,
+                                                                                     const double v0, const double v1,
+                                                                                     const double a0, const double a1)
+{
+    boost::shared_ptr<KDL::VelocityProfile_Spline> _velocity_profile;
+    _velocity_profile.reset(new KDL::VelocityProfile_Spline());
+    _velocity_profile->SetProfileDuration(0, v0, a0, L, v1, a1, T);
 
     return _velocity_profile;
 }

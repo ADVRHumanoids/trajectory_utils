@@ -28,6 +28,7 @@ add_custom_command( TARGET trajectory_utils POST_BUILD
                testLinearTrj
                testArcTrj
                testLinearPlusArcTrj
+               testSplineVelProfile
                )
 
 SET(TestLibs trajectory_utils ${GTEST_BOTH_LIBRARIES} ${idynutils_LIBRARIES} ${orocos_kdl_LIBRARIES} ${kdl_parser_LIBRARIES})
@@ -44,7 +45,13 @@ ADD_EXECUTABLE(testLinearPlusArcTrj     testLinearPlusArcTrj.cpp)
 TARGET_LINK_LIBRARIES(testLinearPlusArcTrj ${TestLibs})
 add_dependencies(testLinearPlusArcTrj GTest-ext testLinearPlusArcTrj)
 
+ADD_EXECUTABLE(testSplineVelProfile     testSplineVelProfile.cpp)
+TARGET_LINK_LIBRARIES(testSplineVelProfile ${TestLibs})
+add_dependencies(testSplineVelProfile GTest-ext testSplineVelProfile)
+
 add_test(NAME trajectory_utils_linear_trajectories COMMAND testLinearTrj)
 add_test(NAME trajectory_utils_arc_trajectories COMMAND testArcTrj)
+add_test(NAME trajectory_utils_linear_plus_arc_trajectories COMMAND testLinearPlusArcTrj)
+add_test(NAME trajectory_utils_spline_vel_profile COMMAND testSplineVelProfile)
 
 
