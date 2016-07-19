@@ -178,6 +178,7 @@ public:
      * NOTE that if SPLINE_5 is used then initial and final velocities and accelerations are considered 0.0
      * and the time of the trajectory is computed as:
      * T = (3./2.)*(L/max_vel) where L is the path length
+     * Note also that this is a min jerk trajectory
      *
      * @param vel_profile desired velocity profile
      * @param start Frame
@@ -205,6 +206,8 @@ public:
      * NOTE that if vel_profile is BANG_COAST_BANG then
      * addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T) is used and the parameters
      * v0, v1, a0, a1 are not used
+     *
+     * NOTE2 if v0 = v1 = a0 = a1 = 0.0 then you are using a min jerk trajectory!!!
      *
      * @param vel_profile desired velocity profile
      * @param start Frame
