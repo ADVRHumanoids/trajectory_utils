@@ -232,7 +232,9 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile,
         break;
     case SPLINE_5:
         _path = createLinePath(start, end);
+        std::cout<<"PAth length: "<<_path->PathLength()<<std::endl;
         _velocity_profile = createSplineVelProfile(_path->PathLength(), T, v0, v1, a0, a1);
+        std::cout<<"duration: "<<_velocity_profile->Duration()<<std::endl;
         break;
     default:
         break;
@@ -331,7 +333,11 @@ boost::shared_ptr<KDL::VelocityProfile> trajectory_generator::createSplineVelPro
 {
     boost::shared_ptr<KDL::VelocityProfile_Spline> _velocity_profile;
     _velocity_profile.reset(new KDL::VelocityProfile_Spline());
-    _velocity_profile->SetProfileDuration(0, v0, a0, L, v1, a1, T);
+
+
+    _velocity_profile->SetProfileDuration(0, v0, L, v1, T);
+    _velocity_profile->SetProfileDuration(0, v0, a0, L, v1, a1, T); //<- I hope this is used...
+
 
     return _velocity_profile;
 }

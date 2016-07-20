@@ -60,6 +60,23 @@ public:
 
 };
 
+    TEST_F(testSplineVelProfile, testMinJerkTrj)
+    {
+        KDL::Frame start; start.Identity();
+        KDL::Frame end = start;
+        end.p.x(end.p.x()+0.3);
+
+        double T = 5.0;
+
+        this->trj.addMinJerkTrj(start, end, T);
+        std::cout<<"start: "<<std::endl; cartesian_utils::printKDLFrame(this->trj.Pos(0)); std::cout<<std::endl;
+        tests_utils::KDLFramesAreEqual(this->trj.Pos(0), start);
+        std::cout<<"end: "<<std::endl; cartesian_utils::printKDLFrame(this->trj.Pos(T)); std::cout<<std::endl;
+        tests_utils::KDLFramesAreEqual(this->trj.Pos(T), end);
+
+        EXPECT_DOUBLE_EQ(this->trj.Duration(), T);
+    }
+
     TEST_F(testSplineVelProfile, testSplineVelProfile_)
     {
         std::ofstream file1;
