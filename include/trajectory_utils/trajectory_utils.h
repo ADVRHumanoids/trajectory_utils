@@ -63,6 +63,34 @@ public:
     void resetTrajectory();
 
     /**
+     * @brief addMinJerkTrj add a linear trajectories specified by way points, each performed in Ts secs, in
+     * thich the jerk is minimized
+     * @param way_points NOTE that the first way-point is the start!
+     * @param T time of each sub trajectory
+     * @return true if the trajectory is added
+     */
+    bool addMinJerkTrj(const std::vector<KDL::Frame> &way_points, const double T);
+
+    /**
+     * @brief addMinJerkTrj add a linear trajectories specified by way points, each performed in Ts secs, in
+     * thich the jerk is minimized
+     * @param way_points NOTE that the first way-point is the start!
+     * @param Ts time of each sub trajectory
+     * @return true if the trajectory is added
+     */
+    bool addMinJerkTrj(const std::vector<KDL::Frame> &way_points, const std::vector<double> Ts);
+
+    /**
+     * @brief addMinJerkTrj add a linear trajectory between start and end, performed in T secs, in which
+     * the jerk is minimized
+     * @param start frame
+     * @param end frame
+     * @param T time of the trajectory
+     * @return true of the trajectory is added
+     */
+    bool addMinJerkTrj(const KDL::Frame& start, const KDL::Frame& end, const double T);
+
+    /**
      * @brief addArcTrj add an arc trajectory
      *
      * NOTE that if vel_profile is BANG_COAST_BANG then

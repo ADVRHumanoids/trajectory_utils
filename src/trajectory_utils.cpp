@@ -19,6 +19,19 @@ void trajectory_generator::resetTrajectory()
     _trj.reset(new KDL::Trajectory_Composite());
 }
 
+bool trajectory_generator::addMinJerkTrj(const std::vector<KDL::Frame> &way_points, const double T)
+{
+    std::vector<double> Ts;
+    for(unsigned int i = 0; i < way_points.size()-1; ++i)
+        Ts.push_back(T);
+    return addMinJerkTrj(way_points, Ts);
+}
+
+bool trajectory_generator::addMinJerkTrj(const KDL::Frame& start, const KDL::Frame& end, const double T)
+{
+    return addLineTrj(SPLINE_5, start, end, T, 0.0, 0.0, 0.0, 0.0);
+}
+
 bool trajectory_generator::addArcTrj(const velocity_profile vel_profile,
                const KDL::Frame &start_pose, const KDL::Rotation &final_rotation,
                const double angle_of_rotation, const KDL::Vector &circle_center,
@@ -194,6 +207,16 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const 
     _is_inited = true;
     _time = 0.0;
 
+    return _is_inited;
+}
+
+bool trajectory_generator::addMinJerkTrj(const std::vector<KDL::Frame> &way_points,
+                                         const std::vector<double> Ts)
+{
+    bool a = true;
+    for(unsigned int i = 0; i < way_points.size()-1; ++i)
+        a = a && addMinJerkTrj(way_points[i], way_points[i+1], Ts[i]);
+    _is_inited = a;
     return _is_inited;
 }
 
