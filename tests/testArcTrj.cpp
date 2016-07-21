@@ -117,6 +117,30 @@ public:
 
 };
 
+TEST_F(testArcTrj, testArcTrj2_)
+{
+    this->circle_center[0] = 0.0;
+    this->circle_center[1] = 0.2;
+    this->circle_center[2] = 0.0;
+    double a = 60.*M_PI/180.;
+    this->angle = a;
+    this->end_rot.DoRotX(a);
+    double T = 5.;
+    this->trj.addArcTrj(this->start, this->end_rot, this->angle, this->circle_center,
+                        this->plane_normal, T);
+
+    std::cout<<"Duration: "<<this->trj.Duration()<<std::endl;
+
+
+    KDL::Frame final_pose = this->trj.Pos(this->trj.Duration());
+    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+
+    for(double t = 0.0; t <= this->trj.Duration(); t+=dt){
+        this->trj.updateTrj();
+        this->logFrame(this->trj.Pos());}
+    this->writeMatlabFile(int((T*1000)/5.));
+}
+
 TEST_F(testArcTrj, testArcTrj_)
 {
     this->angle = M_PI_2;
