@@ -30,18 +30,31 @@ FIND_PACKAGE(orocos_kdl REQUIRED)
 FIND_PACKAGE(kdl_parser REQUIRED)
 FIND_PACKAGE(idynutils REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
+FIND_PACKAGE(roslib REQUIRED)
+FIND_PACKAGE(tf REQUIRED)
+FIND_PACKAGE(nav_msgs REQUIRED)
+FIND_PACKAGE(rviz_visual_tools REQUIRED)
+
 
 INCLUDE_DIRECTORIES(include ${orocos_kdl_DIRS} ${kdl_parser_INCLUDE_DIRS}
-                            ${idynutils_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+                            ${idynutils_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
+                            ${roslib_INCLUDE_DIRS} ${tf_INCLUDE_DIRS} ${nav_msgs_INCLUDE_DIRS}
+                            ${rviz_visual_tools_INCLUDE_DIRS})
 
 file(GLOB_RECURSE idynutils_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils" *.h*
-"${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/paths" *.h*)
+"${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/paths" *.h*
+"${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/utils" *.h*)
 
 ADD_LIBRARY(trajectory_utils SHARED src/trajectory_utils.cpp src/paths/path_circle_fix.cpp
+src/utils/ros_trj_publisher.cpp
 ${trajectory_utils_INCLUDES})
 
+ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
+
 TARGET_LINK_LIBRARIES(trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
-${idynutils_LIBRARIES} ${Boost_LIBRARIES})
+${idynutils_LIBRARIES} ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
+TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
+${idynutils_LIBRARIES} ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
 
 ########################################################################
 # use YCM to export idynutils so that it can be found using find_package #
