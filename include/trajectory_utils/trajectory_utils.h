@@ -38,11 +38,6 @@
 
 namespace trajectory_utils{
 
-enum velocity_profile{
-    BANG_COAST_BANG,
-    SPLINE_5
-};
-
 class trajectory_generator{
 public:
     /**
