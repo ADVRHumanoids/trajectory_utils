@@ -32,26 +32,17 @@ bool trajectory_generator::addMinJerkTrj(const KDL::Frame& start, const KDL::Fra
     return addLineTrj(SPLINE_5, start, end, T, 0.0, 0.0, 0.0, 0.0);
 }
 
-bool trajectory_generator::addArcTrj(const velocity_profile vel_profile,
+bool trajectory_generator::addArcTrj(
                const KDL::Frame &start_pose, const KDL::Rotation &final_rotation,
                const double angle_of_rotation, const KDL::Vector &circle_center,
                const KDL::Vector &plane_normal, const double T,
                const double v0, const double v1, const double a0, const double a1)
 {
-    boost::shared_ptr<KDL::Path> _path;
-    boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
-    switch (vel_profile) {
-    case BANG_COAST_BANG:
-        return addArcTrj(start_pose, final_rotation, angle_of_rotation, circle_center, plane_normal, T);
-        break;
-    case SPLINE_5:
-        _path = createArcPath(start_pose, final_rotation, angle_of_rotation,
-                              circle_center, plane_normal);
-        _velocity_profile = createSplineVelProfile(_path->PathLength(), T, v0, v1, a0, a1);
-        break;
-    default:
-        break;
-    }
+    boost::shared_ptr<KDL::Path> _path = createArcPath(start_pose, final_rotation,
+                                                       angle_of_rotation,
+                                                       circle_center, plane_normal);
+    boost::shared_ptr<KDL::VelocityProfile> _velocity_profile =
+            createSplineVelProfile(_path->PathLength(), T, v0, v1, a0, a1);
 
     boost::shared_ptr<KDL::Trajectory_Segment> _trj_segment;
     _trj_segment.reset(new KDL::Trajectory_Segment(_path.get()->Clone(),
@@ -80,12 +71,11 @@ bool trajectory_generator::addArcTrj(const KDL::Frame &start_pose, const KDL::Ro
 
     computeMaxVelAndMaxAccForBCB(T, _tmp_path->PathLength(), max_vel, max_acc);
 
-    return addArcTrj(BANG_COAST_BANG, start_pose, final_rotation, angle_of_rotation, circle_center,
+    return addArcTrj(start_pose, final_rotation, angle_of_rotation, circle_center,
                      plane_normal, max_vel, max_acc);
 }
 
-bool trajectory_generator::addArcTrj(const trajectory_utils::velocity_profile vel_profile,
-                                     const KDL::Frame& start_pose, const KDL::Rotation& final_rotation,
+bool trajectory_generator::addArcTrj(const KDL::Frame& start_pose, const KDL::Rotation& final_rotation,
                                      const double angle_of_rotation,
                                      const KDL::Vector& circle_center, const KDL::Vector& plane_normal,
                                      const double max_vel, const double max_acc)
@@ -94,23 +84,9 @@ bool trajectory_generator::addArcTrj(const trajectory_utils::velocity_profile ve
                                                        circle_center, plane_normal);
 
     boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
-    double L = 0.0;
-    double T = 0.0;
-    switch (vel_profile) {
-    case BANG_COAST_BANG:
-        if(!checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
+    if(!checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
             return false;
-        _velocity_profile = createTrapezoidalVelProfile(max_vel, max_acc, _path->PathLength());
-        break;
-    case SPLINE_5:
-        L = _path->PathLength();
-        T = (3./2.)*(L/max_vel);
-        _velocity_profile = createSplineVelProfile(L, T, 0.0, 0.0);
-        break;
-    default:
-        break;
-    }
-
+    _velocity_profile = createTrapezoidalVelProfile(max_vel, max_acc, _path->PathLength());
 
     boost::shared_ptr<KDL::Trajectory_Segment> _trj_segment;
     _trj_segment.reset(new KDL::Trajectory_Segment(_path.get()->Clone(),

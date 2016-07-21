@@ -62,6 +62,7 @@ public:
      */
     void resetTrajectory();
 
+    //********MinJerkTrj********
     /**
      * @brief addMinJerkTrj add a linear trajectories specified by way points, each performed in Ts secs, in
      * thich the jerk is minimized
@@ -89,17 +90,12 @@ public:
      * @return true of the trajectory is added
      */
     bool addMinJerkTrj(const KDL::Frame& start, const KDL::Frame& end, const double T);
+    //************************
 
+    //******ArcTrj************
     /**
-     * @brief addArcTrj add an arc trajectory
+     * @brief addArcTrj add an arc trajectory with quintic spline velocity profile
      *
-     * NOTE that if vel_profile is BANG_COAST_BANG then
-     * addArcTrj(const KDL::Frame &start_pose, const KDL::Rotation &final_rotation,
-     *           const double angle_of_rotation,
-     *           const KDL::Vector &circle_center, const KDL::Vector &plane_normal,
-     *           const double T) is used and the parameters v0, v1, a0, a1 are not used
-     *
-     * @param vel_profile desired velocity profile
      * @param start_pose on the arc trajectory
      * @param final_rotation at the end of the arc trajectory
      * @param angle_of_rotation amount of rotation (arc trajectory)
@@ -112,8 +108,7 @@ public:
      * @param a1 final acceleration
      * @return true of the trajectory is added
      */
-    bool addArcTrj(const velocity_profile vel_profile,
-                   const KDL::Frame &start_pose, const KDL::Rotation &final_rotation,
+    bool addArcTrj(const KDL::Frame &start_pose, const KDL::Rotation &final_rotation,
                    const double angle_of_rotation, const KDL::Vector &circle_center,
                    const KDL::Vector &plane_normal, const double T,
                    const double v0, const double v1, const double a0, const double a1);
@@ -135,13 +130,8 @@ public:
                    const double T);
 
     /**
-     * @brief addArcTrj add an arc trajectory
+     * @brief addArcTrj add an arc trajectory with Bang-Coast-Bang velocity profile
      *
-     * NOTE that if SPLINE_5 is used then initial and final velocities and accelerations are considered 0.0
-     * and the time of the trajectory is computed as:
-     * T = (3./2.)*(L/max_vel) where L is the path length
-     *
-     * @param vel_profile desired velocity profile
      * @param start_pose on the arc trajectory
      * @param final_rotation final rotation at the end of the arc trajectory
      * @param angle_of_rotation amount of rotation (arc trajectory)
@@ -151,12 +141,13 @@ public:
      * @param max_acc max acceleration of the trajectory
      * @return true if the trajectories has been added
      */
-    bool addArcTrj(const velocity_profile vel_profile,
-                   const KDL::Frame& start_pose, const KDL::Rotation& final_rotation,
+    bool addArcTrj(const KDL::Frame& start_pose, const KDL::Rotation& final_rotation,
                    const double angle_of_rotation,
                    const KDL::Vector& circle_center, const KDL::Vector& plane_normal,
                    const double max_vel, const double max_acc);
+    //************************
 
+    //*********Linetrj********
     /**
      * @brief addLineTrj add a set of linear trajectories, specified by way-points and each
      * costituted by a BANG_COAST_BANG velocity profile. Here we assume that the BANG phases least as
@@ -250,6 +241,7 @@ public:
     bool addLineTrj(const velocity_profile vel_profile,
                     const KDL::Frame& start, const KDL::Frame& end, const double T,
                     const double v0, const double v1, const double a0, const double a1);
+    //**************************
 
     /**
      * @brief Pos return a frame from the trajectory at time t
