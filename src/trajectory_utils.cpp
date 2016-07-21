@@ -29,7 +29,7 @@ bool trajectory_generator::addMinJerkTrj(const std::vector<KDL::Frame> &way_poin
 
 bool trajectory_generator::addMinJerkTrj(const KDL::Frame& start, const KDL::Frame& end, const double T)
 {
-    return addLineTrj(SPLINE_5, start, end, T, 0.0, 0.0, 0.0, 0.0);
+    return addLineTrj(start, end, T, 0.0, 0.0, 0.0, 0.0);
 }
 
 bool trajectory_generator::addArcTrj(
@@ -119,7 +119,7 @@ bool trajectory_generator::addLineTrj(const std::vector<KDL::Frame>& way_points,
     return _is_inited;
 }
 
-bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const std::vector<KDL::Frame>& way_points,
+bool trajectory_generator::addLineTrj(const std::vector<KDL::Frame>& way_points,
                  const double max_vel, const double max_acc)
 {
     std::vector<double> max_vels; max_vels.reserve(way_points.size()-1);
@@ -127,15 +127,15 @@ bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const 
     for(unsigned int i = 0; i < way_points.size()-1; ++i){
         max_vels.push_back(max_vel);
         max_accs.push_back(max_acc);}
-    return addLineTrj(vel_profile, way_points, max_vels, max_accs);
+    return addLineTrj(way_points, max_vels, max_accs);
 }
 
-bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const std::vector<KDL::Frame>& way_points,
+bool trajectory_generator::addLineTrj(const std::vector<KDL::Frame>& way_points,
                  const std::vector<double> max_vels, const std::vector<double> max_accs)
 {
     bool a = true;
     for(unsigned int i = 0; i < way_points.size()-1; ++i)
-        a = a && addLineTrj(vel_profile, way_points[i], way_points[i+1], max_vels[i], max_accs[i]);
+        a = a && addLineTrj(way_points[i], way_points[i+1], max_vels[i], max_accs[i]);
     _is_inited = a;
     return _is_inited;
 }
@@ -148,31 +148,18 @@ bool trajectory_generator::addLineTrj(const KDL::Frame& start, const KDL::Frame&
 
     computeMaxVelAndMaxAccForBCB(T, _tmp_path->PathLength(), max_vel, max_acc);
 
-    return addLineTrj(BANG_COAST_BANG, start, end, max_vel, max_acc);
+    return addLineTrj(start, end, max_vel, max_acc);
 }
 
-bool trajectory_generator::addLineTrj(const velocity_profile vel_profile, const KDL::Frame& start, const KDL::Frame& end,
+bool trajectory_generator::addLineTrj(const KDL::Frame& start, const KDL::Frame& end,
                                       const double max_vel, const double max_acc)
 {
     boost::shared_ptr<KDL::Path> _path = createLinePath(start, end);
 
     boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
-    double L = 0.0;
-    double T = 0.0;
-    switch (vel_profile) {
-    case BANG_COAST_BANG:
-        if(!checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
+    if(!checkIfCoastPhaseExists(max_vel, max_acc, _path->PathLength()))
             return false;
-        _velocity_profile = createTrapezoidalVelProfile(max_vel, max_acc, _path->PathLength());
-        break;
-    case SPLINE_5:
-        L = _path->PathLength();
-        T = (3./2.)*(L/max_vel);
-        _velocity_profile = createSplineVelProfile(L, T, 0.0, 0.0);
-        break;
-    default:
-        break;
-    }
+    _velocity_profile = createTrapezoidalVelProfile(max_vel, max_acc, _path->PathLength());
 
     boost::shared_ptr<KDL::Trajectory_Segment> _trj_segment;
     _trj_segment.reset(new KDL::Trajectory_Segment(_path.get()->Clone(),
@@ -196,25 +183,14 @@ bool trajectory_generator::addMinJerkTrj(const std::vector<KDL::Frame> &way_poin
     return _is_inited;
 }
 
-bool trajectory_generator::addLineTrj(const velocity_profile vel_profile,
-                                      const KDL::Frame& start, const KDL::Frame& end, const double T,
-                                      const double v0, const double v1, const double a0, const double a1)
+bool trajectory_generator::addLineTrj(const KDL::Frame& start, const KDL::Frame& end,
+                                      const double T,
+                                      const double v0, const double v1,
+                                      const double a0, const double a1)
 {
-    boost::shared_ptr<KDL::Path> _path;
-    boost::shared_ptr<KDL::VelocityProfile> _velocity_profile;
-    switch (vel_profile) {
-    case BANG_COAST_BANG:
-        return addLineTrj(start, end, T);
-        break;
-    case SPLINE_5:
-        _path = createLinePath(start, end);
-        std::cout<<"PAth length: "<<_path->PathLength()<<std::endl;
-        _velocity_profile = createSplineVelProfile(_path->PathLength(), T, v0, v1, a0, a1);
-        std::cout<<"duration: "<<_velocity_profile->Duration()<<std::endl;
-        break;
-    default:
-        break;
-    }
+    boost::shared_ptr<KDL::Path> _path = createLinePath(start, end);
+    boost::shared_ptr<KDL::VelocityProfile> _velocity_profile =
+            createSplineVelProfile(_path->PathLength(), T, v0, v1, a0, a1);
 
     boost::shared_ptr<KDL::Trajectory_Segment> _trj_segment;
     _trj_segment.reset(new KDL::Trajectory_Segment(_path.get()->Clone(),

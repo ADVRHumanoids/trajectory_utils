@@ -169,44 +169,37 @@ public:
     bool addLineTrj(const std::vector<KDL::Frame>& way_points, const std::vector<double> T);
 
     /**
-     * @brief addLineTrj add a set of linear trajectories, specified by way-points,
-     * each constituted by a linear path and a specified velocity profile.
-     * @param vel_profile desired velocity profile
+     * @brief addLineTrj addLineTrj add a set of linear trajectories, specified by way-points,
+     * each constituted by a linear path and a bang-coast-bang velocity profile.
      * @param way_points NOTE that the first way-point is the start!
      * @param max_vels max velocity for all the trajectories
      * @param max_accs max acceleration for all the trajectories
      * @return true if the trajectories has been added
      */
-    bool addLineTrj(const velocity_profile vel_profile, const std::vector<KDL::Frame>& way_points,
-                     const double max_vel, const double max_acc);
+    bool addLineTrj(const std::vector<KDL::Frame>& way_points,
+                    const double max_vel, const double max_acc);
 
     /**
      * @brief addLineTrj add a set of linear trajectories, specified by way-points,
-     * each constituted by a linear path and a specified velocity profile.
-     * @param vel_profile desired velocity profile
+     * each constituted by a linear path and a bang-coast-bang velocity profile.
      * @param way_points NOTE that the first way-point is the start!
      * @param max_vels max velocity for each trajectory
      * @param max_accs max acceleration for each trajectory
      * @return true if the trajectories has been added
      */
-    bool addLineTrj(const velocity_profile vel_profile, const std::vector<KDL::Frame>& way_points,
+    bool addLineTrj(const std::vector<KDL::Frame>& way_points,
                      const std::vector<double> max_vels, const std::vector<double> max_accs);
     /**
-     * @brief addLineTrj add a trajectory constituted by a linear path and a specified velocity profile
+     * @brief addLineTrj add a trajectory constituted by a linear path and a
+     * bang-coast-bang velocity profile
      *
-     * NOTE that if SPLINE_5 is used then initial and final velocities and accelerations are considered 0.0
-     * and the time of the trajectory is computed as:
-     * T = (3./2.)*(L/max_vel) where L is the path length
-     * Note also that this is a min jerk trajectory
-     *
-     * @param vel_profile desired velocity profile
      * @param start Frame
      * @param end Frame
      * @param max_vel max velocity of the trajectory
      * @param max_acc max acceleration of the trajectory
      * @return true if the trajectory has been added
      */
-    bool addLineTrj(const velocity_profile vel_profile, const KDL::Frame& start, const KDL::Frame& end,
+    bool addLineTrj(const KDL::Frame& start, const KDL::Frame& end,
                     const double max_vel, const double max_acc);
 
     /**
@@ -220,15 +213,11 @@ public:
     bool addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T);
 
     /**
-     * @brief addLineTrj add a trajectory constituted by a linear path and a specified velocity profile.
+     * @brief addLineTrj add a trajectory constituted by a linear path and a
+     * quintic spline as velocity profile.
      *
-     * NOTE that if vel_profile is BANG_COAST_BANG then
-     * addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T) is used and the parameters
-     * v0, v1, a0, a1 are not used
+     * NOTE if v0 = v1 = a0 = a1 = 0.0 then you are using a min jerk trajectory!!!
      *
-     * NOTE2 if v0 = v1 = a0 = a1 = 0.0 then you are using a min jerk trajectory!!!
-     *
-     * @param vel_profile desired velocity profile
      * @param start Frame
      * @param end Frame
      * @param T time of the trajectory
@@ -238,8 +227,7 @@ public:
      * @param a1 final acceleration
      * @return true if the trajectory has been added
      */
-    bool addLineTrj(const velocity_profile vel_profile,
-                    const KDL::Frame& start, const KDL::Frame& end, const double T,
+    bool addLineTrj(const KDL::Frame& start, const KDL::Frame& end, const double T,
                     const double v0, const double v1, const double a0, const double a1);
     //**************************
 

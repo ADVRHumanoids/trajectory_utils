@@ -209,8 +209,7 @@ TEST_F(testLinearTrj, testCreateTrapezoidalVelProfile)
 TEST_F(testLinearTrj, testTrajectoryGenerator){
     EXPECT_DOUBLE_EQ(this->trj.getTime(), 0.0);
 
-    EXPECT_TRUE(this->trj.addLineTrj(trajectory_utils::BANG_COAST_BANG,
-                                     this->way_points[0], this->way_points[1], 1., 20.));
+    EXPECT_TRUE(this->trj.addLineTrj(this->way_points[0], this->way_points[1], 1., 20.));
 
     EXPECT_TRUE(this->trj.isInited());
     EXPECT_TRUE(this->trj.Duration() > 0.0);
