@@ -32,10 +32,34 @@ namespace trajectory_utils{
 class trajectory_publisher
 {
 public:
+    /**
+     * @brief trajectory_publisher
+     * @param topic_name trajectories will be published using this topic name
+     */
     trajectory_publisher(const std::string& topic_name);
 
+    /**
+     * @brief setTrj is used to set the next trajctory that will be displayed
+     * @param trj
+     * @param frame wrt the trajectory is displayed
+     */
     void setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj, const std::string& frame);
+
+    /**
+     * @brief setDecimation
+     * @param decimation is the dt in [sec] used to print the trj
+     */
     void setDecimation(const double decimation);
+
+    /**
+     * @brief setDecimation2
+     * @param decimation2 is the step to print the frames
+     */
+    void setDecimation2(const int decimation2);
+
+    /**
+     * @brief publish trajectories and frames in rviz
+     */
     void publish();
 
 private:

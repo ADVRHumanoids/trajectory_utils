@@ -18,6 +18,11 @@ void trajectory_publisher::setDecimation(const double decimation)
     _decimation = decimation;
 }
 
+void trajectory_publisher::setDecimation2(const int decimation2)
+{
+    _decimation2 = decimation2;
+}
+
 void trajectory_publisher::publish()
 {
     _trj_publisher.publish(_trj_msg);
