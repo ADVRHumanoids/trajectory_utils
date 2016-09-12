@@ -3,11 +3,20 @@
 
 using namespace trajectory_utils;
 
+trajectory_generator::trajectory_generator(const double dt, const std::string& base_frame, const std::string& tip_frame):
+    trajectory_generator(dt)
+{
+    _base_frame = base_frame;
+    _tip_frame = tip_frame;
+}
+
 trajectory_generator::trajectory_generator(const double dt):
     _dt(dt),
     _time(0.0),
     _eq_radius(0.01),
-    _is_inited(false)
+    _is_inited(false),
+    _base_frame(""),
+    _tip_frame("")
 {
     _trj.reset(new KDL::Trajectory_Composite());
 }

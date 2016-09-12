@@ -41,10 +41,60 @@ namespace trajectory_utils{
 class trajectory_generator{
 public:
     /**
+     * @brief trajectory_generator
+     * @param dt
+     * @param base_frame
+     * @param tip_frame
+     */
+    trajectory_generator(const double dt, const std::string& base_frame, const std::string& tip_frame);
+
+    /**
      * @brief trajectory_generator constructor
      * @param dt loop time
      */
     trajectory_generator(const double dt);
+
+    /**
+     * @brief getBaseFrame
+     * @return
+     */
+    std::string getBaseFrame(){
+        return _base_frame;
+    }
+
+    /**
+     * @brief getTipFrame
+     * @return
+     */
+    std::string getTipFrame(){
+        return _tip_frame;
+    }
+
+    /**
+     * @brief changeBaseFrame
+     * @param base_frame
+     */
+    void changeBaseFrame(const std::string& base_frame){
+        _base_frame = base_frame;
+    }
+
+    /**
+     * @brief changeTipFrame
+     * @param tip_frame
+     */
+    void changeTipFrame(const std::string& tip_frame){
+        _tip_frame = tip_frame;
+    }
+
+    /**
+     * @brief changeBaseTipFrame
+     * @param base_frame
+     * @param tip_frame
+     */
+    void changeBaseTipFrame(const std::string& base_frame, const std::string& tip_frame){
+        changeBaseFrame(base_frame);
+        changeTipFrame(tip_frame);
+    }
 
     /**
      * @brief getTrajectory
@@ -317,6 +367,8 @@ protected:
     double _time;
     double _eq_radius;
     bool   _is_inited;
+    std::string _base_frame;
+    std::string _tip_frame;
 
     boost::shared_ptr<KDL::Trajectory_Composite> _trj;
 
