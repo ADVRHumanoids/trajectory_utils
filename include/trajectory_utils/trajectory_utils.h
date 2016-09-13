@@ -44,9 +44,9 @@ public:
      * @brief trajectory_generator
      * @param dt
      * @param base_frame
-     * @param tip_frame
+     * @param distal_frame
      */
-    trajectory_generator(const double dt, const std::string& base_frame, const std::string& tip_frame);
+    trajectory_generator(const double dt, const std::string& base_frame, const std::string& distal_frame);
 
     /**
      * @brief trajectory_generator constructor
@@ -63,11 +63,11 @@ public:
     }
 
     /**
-     * @brief getTipFrame
+     * @brief getDistalFrame
      * @return
      */
-    std::string getTipFrame(){
-        return _tip_frame;
+    std::string getDistalFrame(){
+        return _distal_frame;
     }
 
     /**
@@ -82,8 +82,8 @@ public:
      * @brief changeTipFrame
      * @param tip_frame
      */
-    void changeTipFrame(const std::string& tip_frame){
-        _tip_frame = tip_frame;
+    void changeDistalFrame(const std::string& distal_frame){
+        _distal_frame = distal_frame;
     }
 
     /**
@@ -93,7 +93,7 @@ public:
      */
     void changeBaseTipFrame(const std::string& base_frame, const std::string& tip_frame){
         changeBaseFrame(base_frame);
-        changeTipFrame(tip_frame);
+        changeDistalFrame(tip_frame);
     }
 
     /**
@@ -368,7 +368,7 @@ protected:
     double _eq_radius;
     bool   _is_inited;
     std::string _base_frame;
-    std::string _tip_frame;
+    std::string _distal_frame;
 
     boost::shared_ptr<KDL::Trajectory_Composite> _trj;
 
