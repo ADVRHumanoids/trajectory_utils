@@ -4,10 +4,14 @@
 using namespace trajectory_utils;
 
 trajectory_generator::trajectory_generator(const double dt, const std::string& base_frame, const std::string& distal_frame):
-    trajectory_generator(dt)
+    _dt(dt),
+    _time(0.0),
+    _eq_radius(0.01),
+    _is_inited(false),
+    _base_frame(base_frame),
+    _distal_frame(distal_frame)
 {
-    _base_frame = base_frame;
-    _distal_frame = distal_frame;
+    _trj.reset(new KDL::Trajectory_Composite());
 }
 
 trajectory_generator::trajectory_generator(const double dt):
