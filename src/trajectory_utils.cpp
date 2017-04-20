@@ -1,5 +1,4 @@
 #include <trajectory_utils/trajectory_utils.h>
-#include <idynutils/cartesian_utils.h>
 
 using namespace trajectory_utils;
 
@@ -312,10 +311,13 @@ void trajectory_generator::normalizeQuaternion(KDL::Frame& F)
     double x,y,z,w;
     F.M.GetQuaternion(x,y,z,w);
 
-    quaternion tmp_q(x,y,z,w);
-    quaternion::normalize(tmp_q);
+    double d = sqrt(x*x + y*y + z*z + w*w);
+    x = x/d;
+    y = y/d;
+    z = z/d;
+    w = w/d;
 
-    F.M = F.M.Quaternion(tmp_q.x, tmp_q.y,tmp_q.z,tmp_q.w);
+    F.M = F.M.Quaternion(x, y,z,w);
 }
 
 bool trajectory_generator::checkIfCoastPhaseExists(const double max_vel, const double max_acc,
