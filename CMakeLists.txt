@@ -55,7 +55,7 @@ file(GLOB_RECURSE idynutils_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/trajec
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/utils" *.h*)
 
 ADD_LIBRARY(trajectory_utils SHARED src/trajectory_utils.cpp src/paths/path_circle_fix.cpp
-src/utils/ros_trj_publisher.cpp
+#src/utils/ros_trj_publisher.cpp
 ${trajectory_utils_INCLUDES})
 
 #ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
