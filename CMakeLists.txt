@@ -58,12 +58,12 @@ ADD_LIBRARY(trajectory_utils SHARED src/trajectory_utils.cpp src/paths/path_circ
 src/utils/ros_trj_publisher.cpp
 ${trajectory_utils_INCLUDES})
 
-ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
+#ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
 
 TARGET_LINK_LIBRARIES(trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
 ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
-TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
-${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
+#TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
+#${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
 
 ########################################################################
 # use YCM to export idynutils so that it can be found using find_package #
