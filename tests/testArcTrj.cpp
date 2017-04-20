@@ -1,7 +1,6 @@
 #include <idynutils/tests_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
-#include <idynutils/cartesian_utils.h>
 #include <fstream>
 
 #define dt 0.001
@@ -133,7 +132,11 @@ TEST_F(testArcTrj, testArcTrj2_)
 
 
     KDL::Frame final_pose = this->trj.Pos(this->trj.Duration());
-    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+    std::cout<<"Final Pose:"<<std::endl;
+    std::cout<<"[x: "<<final_pose.p.x()<<" y: "<<final_pose.p.y()<<" z: "<<final_pose.p.z()<<"]"<<std::endl;
+    double R,P,Y;
+    final_pose.M.GetRPY(R, P, Y);
+    std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
 
     for(double t = 0.0; t <= this->trj.Duration(); t+=dt){
         this->trj.updateTrj();
@@ -153,14 +156,21 @@ TEST_F(testArcTrj, testArcTrj_)
 
 
     KDL::Frame final_pose = this->trj.Pos(this->trj.Duration());
-    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+    std::cout<<"Final Pose:"<<std::endl;
+    std::cout<<"[x: "<<final_pose.p.x()<<" y: "<<final_pose.p.y()<<" z: "<<final_pose.p.z()<<"]"<<std::endl;
+    double R,P,Y;
+    final_pose.M.GetRPY(R, P, Y);
+    std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
 
     KDL::Frame expected_final_pose; expected_final_pose.Identity();
     expected_final_pose.M.DoRotX(M_PI_2);
     expected_final_pose.p.x(0.);
     expected_final_pose.p.y(1.);
     expected_final_pose.p.z(-1.);
-    std::cout<<"Final Pose Expected:"<<std::endl;cartesian_utils::printKDLFrame(expected_final_pose);
+    std::cout<<"Final Pose Expected:"<<std::endl;
+    std::cout<<"[x: "<<expected_final_pose.p.x()<<" y: "<<expected_final_pose.p.y()<<" z: "<<expected_final_pose.p.z()<<"]"<<std::endl;
+    expected_final_pose.M.GetRPY(R, P, Y);
+    std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
 
     tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
 
@@ -182,7 +192,12 @@ TEST_F(testArcTrj, testCreateArcPath2)
     std::cout<<"Path lenght: "<<arc_path->PathLength()<<std::endl;
 
     KDL::Frame final_pose = arc_path->Pos(arc_path->PathLength());
-    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+    std::cout<<"Final Pose:"<<std::endl;
+    std::cout<<"[x: "<<final_pose.p.x()<<" y: "<<final_pose.p.y()<<" z: "<<final_pose.p.z()<<"]"<<std::endl;
+    double R,P,Y;
+    final_pose.M.GetRPY(R, P, Y);
+    std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
+
 
     KDL::Frame expected_final_pose; expected_final_pose.Identity();
     expected_final_pose.M.DoRotX(M_PI_2);
@@ -208,7 +223,12 @@ TEST_F(testArcTrj, testCreateArcPath)
     std::cout<<"Path lenght: "<<arc_path->PathLength()<<std::endl;
 
     KDL::Frame final_pose = arc_path->Pos(arc_path->PathLength());
-    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+    std::cout<<"Final Pose:"<<std::endl;
+    std::cout<<"[x: "<<final_pose.p.x()<<" y: "<<final_pose.p.y()<<" z: "<<final_pose.p.z()<<"]"<<std::endl;
+    double R,P,Y;
+    final_pose.M.GetRPY(R, P, Y);
+    std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
+
 
     KDL::Frame expected_final_pose; expected_final_pose.Identity();
     expected_final_pose.M.DoRotX(M_PI_2);
@@ -233,7 +253,12 @@ TEST_F(testArcTrj, testCreateArcPathNoRotation)
     std::cout<<"Path lenght: "<<arc_path->PathLength()<<std::endl;
 
     KDL::Frame final_pose = arc_path->Pos(arc_path->PathLength());
-    std::cout<<"Final Pose:"<<std::endl;cartesian_utils::printKDLFrame(final_pose);
+    std::cout<<"Final Pose:"<<std::endl;
+    std::cout<<"[x: "<<final_pose.p.x()<<" y: "<<final_pose.p.y()<<" z: "<<final_pose.p.z()<<"]"<<std::endl;
+    double R,P,Y;
+    final_pose.M.GetRPY(R, P, Y);
+    std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
+
 
     KDL::Frame expected_final_pose; expected_final_pose.Identity();
     expected_final_pose.p.x(0.);

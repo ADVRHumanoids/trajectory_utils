@@ -1,7 +1,6 @@
 #include <idynutils/tests_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
-#include <idynutils/cartesian_utils.h>
 #include <fstream>
 
 #define dt 0.001
@@ -138,35 +137,20 @@ public:
 
 TEST_F(testLinearTrj, testNormalizeQuaternion)
 {
-    double x, y, z, w;
-
-    this->start.M.GetQuaternion(x, y, z, w);
-    quaternion q_start(x,y,z,w);
-
-    this->end.M.GetQuaternion(x, y, z, w);
-    quaternion q_end(x,y,z,w);
-
-    q_start.normalize(q_start);
-    q_end.normalize(q_end);
-
-    EXPECT_DOUBLE_EQ(sqrt(q_start.x*q_start.x + q_start.y*q_start.y + q_start.z*q_start.z
-                          + q_start.w*q_start.w),1.);
-    EXPECT_DOUBLE_EQ(sqrt(q_end.x*q_end.x + q_end.y*q_end.y + q_end.z*q_end.z
-                          + q_end.w*q_end.w),1.);
+    double x_start, y_start, z_start, w_start;
+    double x_end, y_end, z_end, w_end;
 
     this->trj._normalizeQuaternion(this->start);
     this->trj._normalizeQuaternion(this->end);
 
-    this->start.M.GetQuaternion(x, y, z, w);
-    quaternion _q_start(x,y,z,w);
+    this->start.M.GetQuaternion(x_start, y_start, z_start, w_start);
 
-    this->end.M.GetQuaternion(x, y, z, w);
-    quaternion _q_end(x,y,z,w);
+    this->end.M.GetQuaternion(x_end, y_end, z_end, w_end);
 
-    EXPECT_DOUBLE_EQ(sqrt(_q_start.x*_q_start.x + _q_start.y*_q_start.y + _q_start.z*_q_start.z
-                          + _q_start.w*_q_start.w),1.);
-    EXPECT_DOUBLE_EQ(sqrt(_q_end.x*_q_end.x + _q_end.y*_q_end.y + _q_end.z*_q_end.z
-                          + _q_end.w*_q_end.w),1.);
+    EXPECT_DOUBLE_EQ(sqrt(x_start*x_start + y_start*y_start + z_start*z_start
+                          + w_start*w_start),1.);
+    EXPECT_DOUBLE_EQ(sqrt(x_end*x_end + y_end*y_end + z_end*z_end
+                          + w_end*w_end),1.);
 }
 
 TEST_F(testLinearTrj, testCheckIfCoastPhaseExists)

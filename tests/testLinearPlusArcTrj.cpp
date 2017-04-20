@@ -1,7 +1,6 @@
 #include <idynutils/tests_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
-#include <idynutils/cartesian_utils.h>
 #include <fstream>
 
 #define dt 0.001

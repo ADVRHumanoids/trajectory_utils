@@ -1,7 +1,6 @@
 #include <idynutils/tests_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
-#include <idynutils/cartesian_utils.h>
 #include <fstream>
 
 #define dt 0.001
@@ -69,9 +68,17 @@ public:
         double T = 5.0;
 
         this->trj.addMinJerkTrj(start, end, T);
-        std::cout<<"start: "<<std::endl; cartesian_utils::printKDLFrame(this->trj.Pos(0)); std::cout<<std::endl;
+        std::cout<<"start: "<<std::endl;
+        std::cout<<"[x: "<<this->trj.Pos(0).p.x()<<" y: "<<this->trj.Pos(0).p.y()<<" z: "<<this->trj.Pos(0).p.z()<<"]"<<std::endl;
+        double R,P,Y;
+        this->trj.Pos(0).M.GetRPY(R, P, Y);
+        std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
+
         tests_utils::KDLFramesAreEqual(this->trj.Pos(0), start);
-        std::cout<<"end: "<<std::endl; cartesian_utils::printKDLFrame(this->trj.Pos(T)); std::cout<<std::endl;
+        std::cout<<"end: "<<std::endl;
+        std::cout<<"[x: "<<this->trj.Pos(T).p.x()<<" y: "<<this->trj.Pos(T).p.y()<<" z: "<<this->trj.Pos(T).p.z()<<"]"<<std::endl;
+        this->trj.Pos(T).M.GetRPY(R, P, Y);
+        std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
         tests_utils::KDLFramesAreEqual(this->trj.Pos(T), end);
 
         EXPECT_DOUBLE_EQ(this->trj.Duration(), T);

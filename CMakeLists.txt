@@ -29,10 +29,14 @@ PROJECT(trajectory_utils)
 FIND_PACKAGE(orocos_kdl REQUIRED)
 FIND_PACKAGE(kdl_parser REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
-FIND_PACKAGE(roslib REQUIRED)
-FIND_PACKAGE(tf REQUIRED)
-FIND_PACKAGE(nav_msgs REQUIRED)
-FIND_PACKAGE(rviz_visual_tools REQUIRED)
+FIND_PACKAGE(roslib QUIET)
+FIND_PACKAGE(tf QUIET)
+FIND_PACKAGE(nav_msgs QUIET)
+FIND_PACKAGE(rviz_visual_tools QUIET)
+
+# compilation flags
+option(TRAJECTORY_UTILS_COMPILE_EXAMPLES "Compile trajectory_utils examples" FALSE)
+option(TRAJECTORY_UTILS_COMPILE_TESTS "Compile trajectory_utils tests" FALSE)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -54,16 +58,25 @@ file(GLOB_RECURSE idynutils_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/trajec
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/paths" *.h*
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/utils" *.h*)
 
-ADD_LIBRARY(trajectory_utils SHARED src/trajectory_utils.cpp src/paths/path_circle_fix.cpp
-#src/utils/ros_trj_publisher.cpp
+set(TRAJECTORY_UTILS_SOURCES src/trajectory_utils.cpp
+                             src/paths/path_circle_fix.cpp)
+if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
+    set(TRAJECTORY_UTILS_SOURCES ${TRAJECTORY_UTILS_SOURCES}
+        src/utils/ros_trj_publisher.cpp)
+endif()
+
+ADD_LIBRARY(trajectory_utils SHARED ${TRAJECTORY_UTILS_SOURCES}
 ${trajectory_utils_INCLUDES})
-
-#ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
-
 TARGET_LINK_LIBRARIES(trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
 ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
-#TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
-#${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
+
+if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
+    if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
+        ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
+        TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
+        ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
+    endif()
+endif()
 
 ########################################################################
 # use YCM to export idynutils so that it can be found using find_package #
@@ -114,5 +127,7 @@ include(AddUninstallTarget)
 #######################
 # Add Testing target  #
 #######################
-#enable_testing()
-#add_subdirectory(tests)
+if(${TRAJECTORY_UTILS_COMPILE_TESTS})
+    enable_testing()
+    add_subdirectory(tests)
+endif()
