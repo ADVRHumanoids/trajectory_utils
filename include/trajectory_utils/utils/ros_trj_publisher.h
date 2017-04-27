@@ -62,6 +62,11 @@ public:
      */
     void publish();
 
+    /**
+     * @brief deleteAllMarkers remove all the markers and trjs
+     */
+    void deleteAllMarkers();
+
 private:
     ros::NodeHandle _n;
 

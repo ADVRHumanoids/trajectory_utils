@@ -13,6 +13,16 @@ trajectory_publisher::trajectory_publisher(const std::string& topic_name)
     _decimation2 = 10;
 }
 
+void trajectory_publisher::deleteAllMarkers()
+{
+    _visual_tools->deleteAllMarkers();
+
+    _trj_msg.poses.clear();
+    _trj_msg.header.stamp = ros::Time::now();
+
+    _trj_publisher.publish(_trj_msg);
+}
+
 void trajectory_publisher::setDecimation(const double decimation)
 {
     _decimation = decimation;
@@ -37,7 +47,7 @@ void trajectory_publisher::publish()
 void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj,
                                   const std::string& frame)
 {
-    _visual_tools.reset(new rviz_visual_tools::RvizVisualTools(frame,"/trj_visual_markers"));
+    _visual_tools.reset(new rviz_visual_tools::RvizVisualTools(frame,"/trj_visual_markers_"+frame));
 
     _trj_msg.poses.clear();
 
