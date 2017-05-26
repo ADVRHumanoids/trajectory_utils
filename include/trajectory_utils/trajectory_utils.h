@@ -284,14 +284,18 @@ public:
     KDL::Frame Pos(double t);
 
     /**
-     * @brief Vel a twist from the trajectory at time t
+     * @brief Vel a twist from the trajectory at time t.
+     * Note that if the trajectory is wrt to a moving base_frame, the returned velocity
+     * is the one when the base_frame is not moving!
      * @param t time
      * @return a twist
      */
     KDL::Twist Vel(double t);
 
     /**
-     * @brief Acc a twist (representing accelerations) from the trajectory at time t
+     * @brief Acc a twist (representing accelerations) from the trajectory at time t.
+     * Note that if the trajectory is wrt to a moving base_frame, the returned acceleration
+     * is the one when the base_frame is not moving!
      * @param t time
      * @return a twist
      */
@@ -304,13 +308,17 @@ public:
     KDL::Frame Pos();
 
     /**
-     * @brief Vel a twist from the trajectory at actual (internal) time
+     * @brief Vel a twist from the trajectory at actual (internal) time.
+     * Note that if the trajectory is wrt to a moving base_frame, the returned velocity
+     * is the one when the base_frame is not moving!
      * @return a twist
      */
     KDL::Twist Vel();
 
     /**
-     * @brief Acc a twist (representing accelerations) from the trajectory at actual (internal) time
+     * @brief Acc a twist (representing accelerations) from the trajectory at actual (internal) time.
+     * Note that if the trajectory is wrt to a moving base_frame, the returned acceleration
+     * is the one when the base_frame is not moving!
      * @return a twist
      */
     KDL::Twist Acc();
