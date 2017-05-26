@@ -59,19 +59,26 @@ public:
 
     /**
      * @brief publish trajectories and frames in rviz
+     * @param delete_visual_tools if true all the visual tools and trj
+     * are cleared before publish. This should be true if the
+     * trajectory displayed is wrt a moving frame. Therefore also the trajectory
+     * will move if the base_frame will move. Unfortunately this creates a bad
+     * visualization of the marker...TO FIX
      */
-    void publish();
+    void publish(bool delete_visual_tools = false);
 
     /**
      * @brief deleteAllMarkers remove all the markers and trjs
      */
-    void deleteAllMarkers();
+    void deleteAllMarkersAndTrj();
 
 private:
     ros::NodeHandle _n;
 
     ros::Publisher _trj_publisher;
     nav_msgs::Path _trj_msg;
+
+    std::string _frame;
 
     rviz_visual_tools::RvizVisualToolsPtr _visual_tools;
 
