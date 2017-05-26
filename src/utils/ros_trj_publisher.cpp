@@ -13,7 +13,7 @@ trajectory_publisher::trajectory_publisher(const std::string& topic_name)
     _decimation2 = 10;
 }
 
-void trajectory_publisher::deleteAllMarkers()
+void trajectory_publisher::deleteAllMarkersAndTrj()
 {
     _visual_tools->deleteAllMarkers();
 
@@ -33,9 +33,22 @@ void trajectory_publisher::setDecimation2(const int decimation2)
     _decimation2 = decimation2;
 }
 
-void trajectory_publisher::publish()
+void trajectory_publisher::publish(bool delete_visual_tools)
 {
+    if(delete_visual_tools)
+    {
+        _visual_tools->deleteAllMarkers();
+
+        nav_msgs::Path tmp;
+        tmp.header.frame_id = _frame;
+        tmp.header.stamp = ros::Time::now();
+        _trj_publisher.publish(tmp);
+    }
+
+    _trj_msg.header.frame_id = _frame;
+    _trj_msg.header.stamp = ros::Time::now();
     _trj_publisher.publish(_trj_msg);
+
     _visual_tools->publishAxisLabeled(_trj_msg.poses[0].pose, "start",
             rviz_visual_tools::LARGE);
     for(unsigned int i = 0; i < _trj_msg.poses.size(); i += _decimation2)
@@ -47,6 +60,8 @@ void trajectory_publisher::publish()
 void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj,
                                   const std::string& frame)
 {
+    _frame = frame;
+
     _visual_tools.reset(new rviz_visual_tools::RvizVisualTools(frame,"/trj_visual_markers_"+frame));
 
     _trj_msg.poses.clear();
@@ -67,12 +82,12 @@ void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Compos
         T.pose.orientation.z = z;
         T.pose.orientation.w = w;
 
-        T.header.frame_id = frame;
-        T.header.stamp = ros::Time::now();
+        //T.header.frame_id = frame;
+        //T.header.stamp = ros::Time::now();
 
         _trj_msg.poses.push_back(T);
 
     }
-    _trj_msg.header.frame_id = frame;
-    _trj_msg.header.stamp = ros::Time::now();
+    //_trj_msg.header.frame_id = frame;
+    //_trj_msg.header.stamp = ros::Time::now();
 }
