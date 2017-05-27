@@ -34,6 +34,7 @@ FIND_PACKAGE(tf QUIET)
 FIND_PACKAGE(nav_msgs QUIET)
 FIND_PACKAGE(rviz_visual_tools QUIET)
 FIND_PACKAGE(interactive_markers QUIET)
+FIND_PACKAGE(catkin QUIET)
 
 # compilation flags
 option(TRAJECTORY_UTILS_COMPILE_EXAMPLES "Compile trajectory_utils examples" FALSE)
@@ -66,12 +67,6 @@ set(TRAJECTORY_UTILS_SOURCES src/trajectory_utils.cpp
 if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
     set(TRAJECTORY_UTILS_SOURCES ${TRAJECTORY_UTILS_SOURCES}
         src/utils/ros_trj_publisher.cpp)
-
-    if(${interactive_markers_FOUND})
-        ADD_EXECUTABLE(trajectory_designer src/ros_nodes/trj_designer.cpp)
-        TARGET_LINK_LIBRARIES(trajectory_designer trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
-            ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${interactive_markers_LIBRARIES})
-    endif()
 endif()
 
 
@@ -88,6 +83,27 @@ if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
     endif()
 endif()
 
+
+if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
+    if(${interactive_markers_FOUND} AND ${catkin_FOUND})
+        ADD_EXECUTABLE(trajectory_designer src/ros_nodes/trj_designer.cpp)
+        TARGET_LINK_LIBRARIES(trajectory_designer trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
+            ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${interactive_markers_LIBRARIES})
+
+       catkin_package(
+              INCLUDE_DIRS include
+              LIBRARIES trajectory_utils
+              CATKIN_DEPENDS roscpp 
+              DEPENDS system_lib
+              )
+     
+       install(TARGETS trajectory_designer
+              ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+              LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+              RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+              )
+    endif()
+endif()
 ########################################################################
 # use YCM to export idynutils so that it can be found using find_package #
 ########################################################################

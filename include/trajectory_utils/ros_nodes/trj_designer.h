@@ -3,17 +3,66 @@
 
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
+#include <kdl_conversions/kdl_msg.h>
+#include <tf/transform_listener.h>
 
 namespace trj_designer{
 
 
 class Marker6DoFs{
 public:
-    Marker6DoFs(const std::string& distal_link,
+    Marker6DoFs(const std::string& base_link, const std::string& distal_link,
+                interactive_markers::InteractiveMarkerServer& server):
+        _server(server),
+        initial_pose(KDL::Frame::Identity()),
+        _base_link(base_link), _distal_link(distal_link)
+    {
+        tf::TransformListener listener;
+        tf::StampedTransform transform;
+        for(unsigned int i = 0; i < 10; ++i){
+        try{
+            ros::Time now = ros::Time::now();
+            listener.waitForTransform(base_link, distal_link,now,ros::Duration(1.0));
+
+            listener.lookupTransform(base_link, distal_link,
+                ros::Time(), transform);
+        }
+        catch (tf::TransformException ex){
+            ROS_ERROR("%s",ex.what());
+            ros::Duration(1.0).sleep();
+        }}
+        KDL::Frame transform_KDL; transform_KDL = transform_KDL.Identity();
+        transform_KDL.p.x(transform.getOrigin().x());
+        transform_KDL.p.y(transform.getOrigin().y());
+        transform_KDL.p.z(transform.getOrigin().z());
+
+        transform_KDL.M = transform_KDL.M.Quaternion(
+                    transform.getRotation().getX(), transform.getRotation().getY(),
+                    transform.getRotation().getZ(), transform.getRotation().getW()
+                    );
+
+        initial_pose = transform_KDL*initial_pose;
+
+
+        MakeMarker(distal_link, false,
+                   visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,
+                   true);
+
+        ROS_WARN("%s initial pose wrt %s is: ", int_marker.name.c_str(),
+                 base_link.c_str());
+        double qx, qy, qz, qw;
+        initial_pose.M.GetQuaternion(qx, qy, qz, qw);
+        ROS_WARN("      pose:   [%f, %f, %f]", initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z());
+        ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
+
+    }
+
+
+
+    void MakeMarker( const std::string& distal_link,
                 bool fixed,
-                unsigned int _interaction_mode,
-                bool show_6dof ):
-        interaction_mode(_interaction_mode)
+                unsigned int interaction_mode,
+                bool show_6dof)
     {
       int_marker.header.frame_id = distal_link;
       int_marker.scale = 0.2;
@@ -77,6 +126,10 @@ public:
         control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
         int_marker.controls.push_back(control);
       }
+
+      _server.insert(int_marker,
+                    boost::bind(boost::mem_fn(&Marker6DoFs::MarkerFeedback),
+                                this, _1));
     }
 
     visualization_msgs::Marker makeBox( visualization_msgs::InteractiveMarker &msg )
@@ -103,12 +156,37 @@ public:
       return msg.controls.back();
     }
 
+    void MarkerFeedback(
+        const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        tf::poseMsgToKDL(feedback->pose, actual_pose);
+        actual_pose = initial_pose*actual_pose;
+
+        ROS_WARN("%s actual_pose pose wrt %s is: ", int_marker.name.c_str(),
+                 _base_link.c_str());
+        double qx, qy, qz, qw;
+        actual_pose.M.GetQuaternion(qx, qy, qz, qw);
+        ROS_WARN("      pose:   [%f, %f, %f]", actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z());
+        ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
+    }
+
+    KDL::Frame getActualPose(){return actual_pose;}
+    KDL::Frame getInitialPose(){return initial_pose;}
+    std::string getBaseLink(){return _base_link;}
+    std::string getDistalLink(){return _distal_link;}
+
     visualization_msgs::InteractiveMarker int_marker;
-    unsigned int interaction_mode;
 private:
     visualization_msgs::InteractiveMarkerControl control;
     visualization_msgs::InteractiveMarkerControl control2;
     visualization_msgs::Marker marker;
+    interactive_markers::InteractiveMarkerServer& _server;
+    KDL::Frame initial_pose;
+    KDL::Frame actual_pose;
+    std::string _base_link;
+    std::string _distal_link;
+
+
 
 
 
