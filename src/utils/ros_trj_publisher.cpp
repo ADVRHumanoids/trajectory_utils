@@ -11,16 +11,21 @@ trajectory_publisher::trajectory_publisher(const std::string& topic_name)
 
     _decimation = 0.1;
     _decimation2 = 10;
+
+    _has_traj = false;
+
 }
 
 void trajectory_publisher::deleteAllMarkersAndTrj()
 {
-    _visual_tools->deleteAllMarkers();
+    if(_has_traj){
+        _visual_tools->deleteAllMarkers();
 
-    _trj_msg.poses.clear();
-    _trj_msg.header.stamp = ros::Time::now();
 
-    _trj_publisher.publish(_trj_msg);
+        _trj_msg.poses.clear();
+        _trj_msg.header.stamp = ros::Time::now();
+
+        _trj_publisher.publish(_trj_msg);}
 }
 
 void trajectory_publisher::setDecimation(const double decimation)
@@ -45,6 +50,8 @@ void trajectory_publisher::publish(bool delete_visual_tools)
         _trj_publisher.publish(tmp);
     }
 
+    _visual_tools->enableBatchPublishing(true);
+
     _trj_msg.header.frame_id = _frame;
     _trj_msg.header.stamp = ros::Time::now();
     _trj_publisher.publish(_trj_msg);
@@ -55,14 +62,17 @@ void trajectory_publisher::publish(bool delete_visual_tools)
         _visual_tools->publishAxis(_trj_msg.poses[i].pose);
     _visual_tools->publishAxisLabeled(_trj_msg.poses[_trj_msg.poses.size()-1].pose, "end",
             rviz_visual_tools::LARGE);
+
+    _visual_tools->triggerBatchPublishAndDisable();
 }
 
 void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj,
-                                  const std::string& frame)
+                                  const std::string& base_frame,
+                                  const std::string& distal_frame)
 {
-    _frame = frame;
+    _frame = base_frame;
 
-    _visual_tools.reset(new rviz_visual_tools::RvizVisualTools(frame,"/trj_visual_markers_"+frame));
+    _visual_tools.reset(new rviz_visual_tools::RvizVisualTools(_frame,"/trj_visual_markers_"+_frame+"_to_"+distal_frame));
 
     _trj_msg.poses.clear();
 
@@ -90,4 +100,6 @@ void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Compos
     }
     //_trj_msg.header.frame_id = frame;
     //_trj_msg.header.stamp = ros::Time::now();
+
+    _has_traj = true;
 }

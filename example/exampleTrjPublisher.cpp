@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     trj.addArcTrj(end, end2, alpha, c,n,T);
 
     trajectory_utils::trajectory_publisher trj_publisher("trj");
-    trj_publisher.setTrj(trj.getTrajectory(), "world");
+    trj_publisher.setTrj(trj.getTrajectory(), "world", "hand");
 
     while(ros::ok()){
         trj_publisher.publish();

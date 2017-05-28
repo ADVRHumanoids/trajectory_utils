@@ -5,19 +5,28 @@
 #include <interactive_markers/menu_handler.h>
 #include <kdl_conversions/kdl_msg.h>
 #include <tf/transform_listener.h>
+#include <trajectory_utils/trajectory_utils.h>
+#include <trajectory_utils/utils/ros_trj_publisher.h>
 
 #define SECS 5
 
 namespace trj_designer{
 
+struct segment_trj{
+    std::string type;
+    double T;
+    KDL::Frame start;
+    KDL::Frame end;
+};
 
 class Marker6DoFs{
 public:
     Marker6DoFs(const std::string& base_link, const std::string& distal_link,
-                interactive_markers::InteractiveMarkerServer& server):
+                interactive_markers::InteractiveMarkerServer& server, const double dT):
         _server(server),
         initial_pose(KDL::Frame::Identity()),
-        _base_link(base_link), _distal_link(distal_link)
+        _base_link(base_link), _distal_link(distal_link),
+        _dT(dT)
     {
         tf::TransformListener listener;
         tf::StampedTransform transform;
@@ -44,6 +53,7 @@ public:
                     );
 
         initial_pose = transform_KDL*initial_pose;
+        start_pose = initial_pose;
 
 
         MakeMarker(distal_link, false,
@@ -58,6 +68,8 @@ public:
         ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
 
         MakeMenu();
+
+        trj_pub.reset(new trajectory_utils::trajectory_publisher(_distal_link+"_trj_viz"));
     }
 
     void MakeMenu()
@@ -215,6 +227,41 @@ public:
         ROS_WARN("  END: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
                  actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z(),
                  qx, qy, qz, qw);
+
+        segment_trj seg;
+        seg.type = trj_type;
+        seg.start = start_pose;
+        seg.end = actual_pose;
+        seg.T = T;
+
+        segments_trj.push_back(seg);
+
+        start_pose = actual_pose;
+
+
+//        publishTrjs();
+
+    }
+
+    void publishTrjs()
+    {
+        if(segments_trj.size() > 0)
+        {
+            trj_gen.reset(new trajectory_utils::trajectory_generator(_dT, _base_link, _distal_link));
+            for(unsigned int i = 0; i < segments_trj.size(); ++i)
+            {
+                segment_trj trj = segments_trj[i];
+                if(trj.type == "MIN_JERK"){
+                    trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
+                }
+            }
+
+
+            //trj_pub->deleteAllMarkersAndTrj();
+            trj_pub->setTrj(trj_gen->getTrajectory(), _base_link, _distal_link);
+
+            trj_pub->publish();
+        }
     }
 
     KDL::Frame getActualPose(){return actual_pose;}
@@ -231,6 +278,7 @@ private:
     interactive_markers::InteractiveMarkerServer& _server;
     KDL::Frame initial_pose;
     KDL::Frame actual_pose;
+    KDL::Frame start_pose;
     std::string _base_link;
     std::string _distal_link;
 
@@ -238,6 +286,11 @@ private:
     interactive_markers::MenuHandler::EntryHandle T_entry;
     interactive_markers::MenuHandler::EntryHandle T_last;
     visualization_msgs::InteractiveMarkerControl  menu_control;
+
+    std::vector<segment_trj> segments_trj;
+    boost::shared_ptr<trajectory_utils::trajectory_generator> trj_gen;
+    double _dT;
+    boost::shared_ptr<trajectory_utils::trajectory_publisher> trj_pub;
 
 
 

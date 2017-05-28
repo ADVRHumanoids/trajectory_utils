@@ -12,16 +12,19 @@ int main(int argc, char** argv)
   nh.getParam("base_link", base_link);
   std::string distal_link;
   nh.getParam("distal_link", distal_link);
-  ROS_INFO("Controlling %s wrt %s", distal_link.c_str(), base_link.c_str());
+  double dT;
+  nh.getParam("dT", dT);
+  ROS_INFO("Trajectory: %s wrt %s at %f [sec]", distal_link.c_str(), base_link.c_str(), dT);
 
 
-  ROS_INFO("Creating Marker...");
-  ROS_INFO("Adding Marker to MarkerServer...");
+
   interactive_markers::InteractiveMarkerServer server(distal_link+"_trajectory_marker_server");
-  trj_designer::Marker6DoFs marker(base_link, distal_link, server);
+  trj_designer::Marker6DoFs marker(base_link, distal_link, server, dT);
 
   server.applyChanges();
 
   ROS_INFO("Running Trajectory Designer...");
-  ros::spin();
+  while(ros::ok()){
+      marker.publishTrjs();
+      ros::spinOnce();}
 }

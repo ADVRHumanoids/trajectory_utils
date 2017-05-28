@@ -56,7 +56,8 @@ INCLUDE_DIRECTORIES(include ${orocos_kdl_DIRS} ${kdl_parser_INCLUDE_DIRS}
                             ${roslib_INCLUDE_DIRS} ${tf_INCLUDE_DIRS} ${nav_msgs_INCLUDE_DIRS}
                             ${rviz_visual_tools_INCLUDE_DIRS})
 
-file(GLOB_RECURSE idynutils_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils" *.h*
+file(GLOB_RECURSE trajectory_utils_INCLUDES
+"${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils" *.h*
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/paths" *.h*
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/utils" *.h*
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/ros_nodes" *.h*)

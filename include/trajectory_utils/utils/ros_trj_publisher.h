@@ -41,9 +41,12 @@ public:
     /**
      * @brief setTrj is used to set the next trajctory that will be displayed
      * @param trj
-     * @param frame wrt the trajectory is displayed
+     * @param base_frame wrt the trajectory is displayed
+     * @param distal_frame end-effector name
      */
-    void setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj, const std::string& frame);
+    void setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj,
+                const std::string& base_frame,
+                const std::string& distal_frame);
 
     /**
      * @brief setDecimation
@@ -85,6 +88,8 @@ private:
 
     double _decimation;
     int _decimation2;
+
+    bool _has_traj;
 
 };
 
