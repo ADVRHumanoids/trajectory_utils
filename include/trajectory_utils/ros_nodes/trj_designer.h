@@ -6,6 +6,8 @@
 #include <kdl_conversions/kdl_msg.h>
 #include <tf/transform_listener.h>
 
+#define SECS 5
+
 namespace trj_designer{
 
 
@@ -55,6 +57,29 @@ public:
         ROS_WARN("      pose:   [%f, %f, %f]", initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z());
         ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
 
+        MakeMenu();
+    }
+
+    void MakeMenu()
+    {
+        min_jerk_entry = menu_handler.insert("MinJerk");
+        T_entry = menu_handler.insert(min_jerk_entry, "T [sec]");
+        for ( int i=0; i<SECS; i++ )
+        {
+            std::ostringstream s;
+            s <<i+1;
+            T_last = menu_handler.insert( T_entry, s.str(),
+                boost::bind(boost::mem_fn(&Marker6DoFs::MinJerkMenuCallBack),
+                            this, _1));
+            menu_handler.setCheckState( T_last, interactive_markers::MenuHandler::UNCHECKED );
+        }
+
+        menu_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+        menu_control.always_visible = true;
+
+        int_marker.controls.push_back(menu_control);
+
+        menu_handler.apply(_server, int_marker.name);
     }
 
 
@@ -162,12 +187,34 @@ public:
         tf::poseMsgToKDL(feedback->pose, actual_pose);
         actual_pose = initial_pose*actual_pose;
 
-        ROS_WARN("%s actual_pose pose wrt %s is: ", int_marker.name.c_str(),
-                 _base_link.c_str());
+//        ROS_WARN("%s actual_pose pose wrt %s is: ", int_marker.name.c_str(),
+//                 _base_link.c_str());
+//        double qx, qy, qz, qw;
+//        actual_pose.M.GetQuaternion(qx, qy, qz, qw);
+//        ROS_WARN("      pose:   [%f, %f, %f]", actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z());
+//        ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
+    }
+
+    void MinJerkMenuCallBack(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        std::string trj_type = "MIN_JERK";
+        double T = feedback->menu_entry_id-2;
+
+        ROS_WARN("REQUEST:");
+        ROS_WARN("  Trj Type: %s", trj_type.c_str());
+        ROS_WARN("  base_link: %s", _base_link.c_str());
+        ROS_WARN("  distal_link: %s", _distal_link.c_str());
+        ROS_WARN("  Time [sec]: %f", T);
         double qx, qy, qz, qw;
+        initial_pose.M.GetQuaternion(qx, qy, qz, qw);
+        ROS_WARN("  START: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
+                 initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z(),
+                 qx, qy, qz, qw);
         actual_pose.M.GetQuaternion(qx, qy, qz, qw);
-        ROS_WARN("      pose:   [%f, %f, %f]", actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z());
-        ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
+        ROS_WARN("  END: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
+                 actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z(),
+                 qx, qy, qz, qw);
     }
 
     KDL::Frame getActualPose(){return actual_pose;}
@@ -176,6 +223,7 @@ public:
     std::string getDistalLink(){return _distal_link;}
 
     visualization_msgs::InteractiveMarker int_marker;
+    interactive_markers::MenuHandler menu_handler;
 private:
     visualization_msgs::InteractiveMarkerControl control;
     visualization_msgs::InteractiveMarkerControl control2;
@@ -185,6 +233,11 @@ private:
     KDL::Frame actual_pose;
     std::string _base_link;
     std::string _distal_link;
+
+    interactive_markers::MenuHandler::EntryHandle min_jerk_entry;
+    interactive_markers::MenuHandler::EntryHandle T_entry;
+    interactive_markers::MenuHandler::EntryHandle T_last;
+    visualization_msgs::InteractiveMarkerControl  menu_control;
 
 
 
