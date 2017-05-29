@@ -93,6 +93,16 @@ public:
         menu_handler.setCheckState(reset_marker_entry, interactive_markers::MenuHandler::UNCHECKED);
 
 
+        //#3 ResetTrj
+        reset_trj_entry = menu_handler.insert("Reset Trajectory");
+        reset_last_entry = menu_handler.insert(reset_trj_entry, "Last",
+            boost::bind(boost::mem_fn(&Marker6DoFs::ResetLastTrjCb), this, _1));
+        menu_handler.setCheckState(reset_last_entry, interactive_markers::MenuHandler::UNCHECKED);
+        reset_all_entry = menu_handler.insert(reset_trj_entry, "All",
+            boost::bind(boost::mem_fn(&Marker6DoFs::ResetTrjCb), this, _1));
+        menu_handler.setCheckState(reset_all_entry, interactive_markers::MenuHandler::UNCHECKED);
+
+
 
 
 
@@ -217,20 +227,20 @@ public:
         std::string trj_type = "MIN_JERK";
         double T = feedback->menu_entry_id-2;
 
-        ROS_WARN("REQUEST:");
-        ROS_WARN("  Trj Type: %s", trj_type.c_str());
-        ROS_WARN("  base_link: %s", _base_link.c_str());
-        ROS_WARN("  distal_link: %s", _distal_link.c_str());
-        ROS_WARN("  Time [sec]: %f", T);
-        double qx, qy, qz, qw;
-        initial_pose.M.GetQuaternion(qx, qy, qz, qw);
-        ROS_WARN("  START: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
-                 initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z(),
-                 qx, qy, qz, qw);
-        actual_pose.M.GetQuaternion(qx, qy, qz, qw);
-        ROS_WARN("  END: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
-                 actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z(),
-                 qx, qy, qz, qw);
+//        ROS_WARN("REQUEST:");
+//        ROS_WARN("  Trj Type: %s", trj_type.c_str());
+//        ROS_WARN("  base_link: %s", _base_link.c_str());
+//        ROS_WARN("  distal_link: %s", _distal_link.c_str());
+//        ROS_WARN("  Time [sec]: %f", T);
+//        double qx, qy, qz, qw;
+//        initial_pose.M.GetQuaternion(qx, qy, qz, qw);
+//        ROS_WARN("  START: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
+//                 initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z(),
+//                 qx, qy, qz, qw);
+//        actual_pose.M.GetQuaternion(qx, qy, qz, qw);
+//        ROS_WARN("  END: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
+//                 actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z(),
+//                 qx, qy, qz, qw);
 
         segment_trj seg;
         seg.type = trj_type;
@@ -244,8 +254,7 @@ public:
 
     }
 
-    void ResetMarkerCb(
-            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    void ResetMarkerPose()
     {
         geometry_msgs::Pose last_pose;
         KDL::Frame last_pose_KDL;
@@ -263,6 +272,38 @@ public:
 
         _server.setPose(int_marker.name, last_pose);
         _server.applyChanges();
+    }
+
+    void ResetMarkerCb(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        ResetMarkerPose();
+    }
+
+    void ResetLastTrjCb(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        if(segments_trj.size() > 0){
+            segments_trj.pop_back();
+            start_pose = segments_trj[segments_trj.size()-1].end;
+
+            trj_pub->deleteAllMarkersAndTrj();
+        }
+        ResetMarkerPose();
+    }
+
+    void ResetTrjCb(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        if(segments_trj.size()){
+            segments_trj.clear();
+
+            start_pose = initial_pose;
+
+            trj_pub->deleteAllMarkersAndTrj();
+        }
+
+        ResetMarkerPose();
     }
 
     void publishTrjs()
@@ -315,6 +356,10 @@ private:
     boost::shared_ptr<trajectory_utils::trajectory_publisher> trj_pub;
 
     interactive_markers::MenuHandler::EntryHandle reset_marker_entry;
+
+    interactive_markers::MenuHandler::EntryHandle reset_trj_entry;
+    interactive_markers::MenuHandler::EntryHandle reset_last_entry;
+    interactive_markers::MenuHandler::EntryHandle reset_all_entry;
 
 
 };
