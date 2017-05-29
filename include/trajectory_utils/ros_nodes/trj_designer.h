@@ -8,6 +8,7 @@
 #include <trajectory_utils/trajectory_utils.h>
 #include <trajectory_utils/utils/ros_trj_publisher.h>
 #include <urdf/model.h>
+#include <geometry_msgs/Pose.h>
 
 #define SECS 5
 
@@ -24,7 +25,8 @@ class Marker6DoFs{
 public:
     Marker6DoFs(const std::string& base_link, const std::string& distal_link,
                 interactive_markers::InteractiveMarkerServer& server, const double dT,
-                const urdf::Model& robot_urdf):
+                const urdf::Model& robot_urdf,
+                ros::NodeHandle& n):
         _server(server),
         initial_pose(KDL::Frame::Identity()),
         _base_link(base_link), _distal_link(distal_link),
@@ -72,6 +74,49 @@ public:
         MakeMenu();
 
         trj_pub.reset(new trajectory_utils::trajectory_publisher(_distal_link+"_trj_viz"));
+
+        _goal_sub = n.subscribe(_distal_link+"_goal", 1000, &Marker6DoFs::GoalCallBack, this);
+    }
+
+
+
+    void GoalCallBack(const geometry_msgs::Pose::ConstPtr& msg)
+    {
+        ROS_WARN("Received goal pose for %s", _distal_link.c_str());
+
+        KDL::Frame goal; goal.Identity();
+        goal.p.x(msg->position.x);
+        goal.p.y(msg->position.y);
+        goal.p.z(msg->position.z);
+        goal.M = goal.M.Quaternion(msg->orientation.x, msg->orientation.y,
+                                   msg->orientation.z, msg->orientation.w);
+
+        _goal_pose.reset(new KDL::Frame(goal.M, goal.p));
+
+        goal_int_marker.header.frame_id = _base_link;
+        goal_int_marker.scale = 0.2;
+
+        goal_int_marker.pose.position.x = msg->position.x;
+        goal_int_marker.pose.position.y = msg->position.y;
+        goal_int_marker.pose.position.z = msg->position.z;
+        goal_int_marker.pose.orientation.x = msg->orientation.x;
+        goal_int_marker.pose.orientation.y = msg->orientation.y;
+        goal_int_marker.pose.orientation.z = msg->orientation.z;
+        goal_int_marker.pose.orientation.w = msg->orientation.w;
+
+        goal_int_marker.name = _distal_link+"_goal";
+        goal_int_marker.description = "";
+
+        makeSTLControl(goal_int_marker);
+
+        goal_int_marker.controls[0].interaction_mode =
+                visualization_msgs::InteractiveMarkerControl::NONE;
+
+        _server.erase(_distal_link+"_goal");
+
+        _server.insert(goal_int_marker);
+
+        _server.applyChanges();
     }
 
     void MakeMenu()
@@ -104,9 +149,21 @@ public:
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetTrjCb), this, _1));
         menu_handler.setCheckState(reset_all_entry, interactive_markers::MenuHandler::UNCHECKED);
 
-
-
-
+        //#4 Goal
+        goal_entry = menu_handler.insert("Goal");
+        remove_goal_entry = menu_handler.insert(goal_entry, "Remove Goal",
+            boost::bind(boost::mem_fn(&Marker6DoFs::RemoveGoalCb), this, _1));
+        menu_handler.setCheckState(remove_goal_entry, interactive_markers::MenuHandler::UNCHECKED);
+        move_to_goal_entry = menu_handler.insert(goal_entry, "Move to Goal in T [sec]");
+        for ( int i=0; i<SECS; i++ )
+        {
+            std::ostringstream s;
+            s <<i+1;
+            goal_T_last = menu_handler.insert( move_to_goal_entry, s.str(),
+                boost::bind(boost::mem_fn(&Marker6DoFs::MinJerkToGoalMenuCallBack),
+                            this, _1));
+            menu_handler.setCheckState( goal_T_last, interactive_markers::MenuHandler::UNCHECKED );
+        }
 
 
         menu_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
@@ -130,19 +187,11 @@ public:
       int_marker.name = distal_link;
       int_marker.description = "";
 
-
-
-
       // insert STL
       makeSTLControl(int_marker);
 
       // insert a box
       //makeBoxControl(int_marker);
-
-
-
-
-
 
       int_marker.controls[0].interaction_mode = interaction_mode;
 
@@ -283,6 +332,43 @@ public:
         actual_pose = initial_pose*actual_pose;
     }
 
+    void MinJerkToGoalMenuCallBack(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        if(_goal_pose)
+        {
+            std::string trj_type = "MIN_JERK";
+            double T = feedback->menu_entry_id-2;
+
+//            ROS_WARN("REQUEST:");
+//            ROS_WARN("  Trj Type: %s", trj_type.c_str());
+//            ROS_WARN("  base_link: %s", _base_link.c_str());
+//            ROS_WARN("  distal_link: %s", _distal_link.c_str());
+//            ROS_WARN("  Time [sec]: %f", T);
+//            double qx, qy, qz, qw;
+//            initial_pose.M.GetQuaternion(qx, qy, qz, qw);
+//            ROS_WARN("  START: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
+//                     initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z(),
+//                     qx, qy, qz, qw);
+//            actual_pose.M.GetQuaternion(qx, qy, qz, qw);
+//            ROS_WARN("  END: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
+//                     actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z(),
+//                     qx, qy, qz, qw);
+
+            segment_trj seg;
+            seg.type = trj_type;
+            seg.start = start_pose;
+            seg.end = *(_goal_pose.get());
+            seg.T = T;
+
+            segments_trj.push_back(seg);
+
+            start_pose = *(_goal_pose.get());
+
+            ResetMarkerPose();
+        }
+    }
+
     void MinJerkMenuCallBack(
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
@@ -316,6 +402,8 @@ public:
 
     }
 
+
+
     void ResetMarkerPose()
     {
         geometry_msgs::Pose last_pose;
@@ -333,6 +421,16 @@ public:
         tf::poseKDLToMsg(last_pose_KDL, last_pose);
 
         _server.setPose(int_marker.name, last_pose);
+        _server.applyChanges();
+    }
+
+    void RemoveGoalCb(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        _goal_pose.reset();
+
+        _server.erase(_distal_link+"_goal");
+
         _server.applyChanges();
     }
 
@@ -424,6 +522,15 @@ private:
     interactive_markers::MenuHandler::EntryHandle reset_all_entry;
 
     urdf::Model _urdf;
+
+    ros::Subscriber _goal_sub;
+    boost::shared_ptr<KDL::Frame> _goal_pose;
+    visualization_msgs::InteractiveMarker goal_int_marker;
+    visualization_msgs::Marker goal_marker;
+    interactive_markers::MenuHandler::EntryHandle goal_entry;
+    interactive_markers::MenuHandler::EntryHandle remove_goal_entry;
+    interactive_markers::MenuHandler::EntryHandle move_to_goal_entry;
+    interactive_markers::MenuHandler::EntryHandle goal_T_last;
 
 
 };
