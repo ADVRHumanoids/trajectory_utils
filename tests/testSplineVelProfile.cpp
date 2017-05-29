@@ -1,4 +1,4 @@
-#include <idynutils/tests_utils.h>
+#include <advr_humanoids_common_utils/test_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
 #include <fstream>
