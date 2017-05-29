@@ -3,10 +3,12 @@
 <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig1" output="screen">
   <param name="base_link" value="torso" />
   <param name="distal_link" value="LSoftHand" />
+  <param name="dT" value="0.01" />
 </node>
 
 <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig2" output="screen">
   <param name="base_link" value="torso" />
   <param name="distal_link" value="RSoftHand" />
+  <param name="dT" value="0.01" />
 </node>
 </launch>

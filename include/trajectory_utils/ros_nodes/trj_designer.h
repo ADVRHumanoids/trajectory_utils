@@ -7,6 +7,7 @@
 #include <tf/transform_listener.h>
 #include <trajectory_utils/trajectory_utils.h>
 #include <trajectory_utils/utils/ros_trj_publisher.h>
+#include <urdf/model.h>
 
 #define SECS 5
 
@@ -22,11 +23,12 @@ struct segment_trj{
 class Marker6DoFs{
 public:
     Marker6DoFs(const std::string& base_link, const std::string& distal_link,
-                interactive_markers::InteractiveMarkerServer& server, const double dT):
+                interactive_markers::InteractiveMarkerServer& server, const double dT,
+                const urdf::Model& robot_urdf):
         _server(server),
         initial_pose(KDL::Frame::Identity()),
         _base_link(base_link), _distal_link(distal_link),
-        _dT(dT)
+        _dT(dT), _urdf(robot_urdf)
     {
         tf::TransformListener listener;
         tf::StampedTransform transform;
@@ -128,8 +130,20 @@ public:
       int_marker.name = distal_link;
       int_marker.description = "";
 
+
+
+
+      // insert STL
+      makeSTLControl(int_marker);
+
       // insert a box
-      makeBoxControl(int_marker);
+      //makeBoxControl(int_marker);
+
+
+
+
+
+
       int_marker.controls[0].interaction_mode = interaction_mode;
 
       if ( fixed )
@@ -202,6 +216,54 @@ public:
       marker.color.a = 1.0;
 
       return marker;
+    }
+
+    visualization_msgs::Marker makeSTL( visualization_msgs::InteractiveMarker &msg )
+    {
+
+
+        boost::shared_ptr<const urdf::Link> link = _urdf.getLink(_distal_link);
+
+        if(link->visual->geometry->type == urdf::Geometry::MESH)
+        {
+            marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+
+            boost::shared_ptr<urdf::Mesh> mesh =
+                    boost::static_pointer_cast<urdf::Mesh>(link->visual->geometry);
+
+            marker.mesh_resource = mesh->filename;
+
+            marker.pose.position.x = link->visual->origin.position.x;
+            marker.pose.position.y = link->visual->origin.position.y;
+            marker.pose.position.z = link->visual->origin.position.z;
+            marker.pose.orientation.x = link->visual->origin.rotation.x;
+            marker.pose.orientation.y = link->visual->origin.rotation.y;
+            marker.pose.orientation.z = link->visual->origin.rotation.z;
+            marker.pose.orientation.w = link->visual->origin.rotation.w;
+
+            marker.color.r = 0.5;
+            marker.color.g = 0.5;
+            marker.color.b = 0.5;
+
+            marker.scale.x = mesh->scale.x;
+            marker.scale.y = mesh->scale.y;
+            marker.scale.z = mesh->scale.z;
+        }
+        else
+            makeBox(msg);
+
+        marker.color.a = .9;
+        return marker;
+    }
+
+    visualization_msgs::InteractiveMarkerControl& makeSTLControl(
+            visualization_msgs::InteractiveMarker &msg )
+    {
+      control2.always_visible = true;
+      control2.markers.push_back( makeSTL(msg) );
+      msg.controls.push_back( control2 );
+
+      return msg.controls.back();
     }
 
     visualization_msgs::InteractiveMarkerControl& makeBoxControl(
@@ -360,6 +422,8 @@ private:
     interactive_markers::MenuHandler::EntryHandle reset_trj_entry;
     interactive_markers::MenuHandler::EntryHandle reset_last_entry;
     interactive_markers::MenuHandler::EntryHandle reset_all_entry;
+
+    urdf::Model _urdf;
 
 
 };
