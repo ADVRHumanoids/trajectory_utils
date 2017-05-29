@@ -74,6 +74,7 @@ public:
 
     void MakeMenu()
     {
+        //#1 Min Jerk
         min_jerk_entry = menu_handler.insert("MinJerk");
         T_entry = menu_handler.insert(min_jerk_entry, "T [sec]");
         for ( int i=0; i<SECS; i++ )
@@ -85,6 +86,16 @@ public:
                             this, _1));
             menu_handler.setCheckState( T_last, interactive_markers::MenuHandler::UNCHECKED );
         }
+
+        //#2ResetMarker
+        reset_marker_entry = menu_handler.insert("Reset Marker Pose",
+            boost::bind(boost::mem_fn(&Marker6DoFs::ResetMarkerCb), this, _1));
+        menu_handler.setCheckState(reset_marker_entry, interactive_markers::MenuHandler::UNCHECKED);
+
+
+
+
+
 
         menu_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
         menu_control.always_visible = true;
@@ -198,13 +209,6 @@ public:
     {
         tf::poseMsgToKDL(feedback->pose, actual_pose);
         actual_pose = initial_pose*actual_pose;
-
-//        ROS_WARN("%s actual_pose pose wrt %s is: ", int_marker.name.c_str(),
-//                 _base_link.c_str());
-//        double qx, qy, qz, qw;
-//        actual_pose.M.GetQuaternion(qx, qy, qz, qw);
-//        ROS_WARN("      pose:   [%f, %f, %f]", actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z());
-//        ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
     }
 
     void MinJerkMenuCallBack(
@@ -238,9 +242,27 @@ public:
 
         start_pose = actual_pose;
 
+    }
 
-//        publishTrjs();
+    void ResetMarkerCb(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        geometry_msgs::Pose last_pose;
+        KDL::Frame last_pose_KDL;
 
+
+        if(segments_trj.size() > 0)
+        {
+            segment_trj trj = segments_trj[segments_trj.size()-1];
+            last_pose_KDL = initial_pose.Inverse()*trj.end;
+        }
+        else
+            last_pose_KDL.Identity();
+
+        tf::poseKDLToMsg(last_pose_KDL, last_pose);
+
+        _server.setPose(int_marker.name, last_pose);
+        _server.applyChanges();
     }
 
     void publishTrjs()
@@ -292,8 +314,7 @@ private:
     double _dT;
     boost::shared_ptr<trajectory_utils::trajectory_publisher> trj_pub;
 
-
-
+    interactive_markers::MenuHandler::EntryHandle reset_marker_entry;
 
 
 };
