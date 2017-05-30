@@ -36,9 +36,14 @@ FIND_PACKAGE(rviz_visual_tools QUIET)
 FIND_PACKAGE(interactive_markers QUIET)
 FIND_PACKAGE(catkin QUIET)
 
-#find_package(srdfdom_advr)
-#find_package(iDynTree)
-#find_package(OpenSoT QUIET)
+find_package(srdfdom_advr REQUIRED)
+find_package(iDynTree REQUIRED)
+find_package(OpenSoT REQUIRED)
+FIND_PACKAGE(XBotInterface REQUIRED)
+find_package(ModelInterfaceIDYNUTILS REQUIRED)
+FIND_PACKAGE(conversion_utils_YARP REQUIRED)
+FIND_PACKAGE(idynutils2 REQUIRED)
+#FIND_PACKAGE(idynutils2 REQUIRED)
 
 # compilation flags
 option(TRAJECTORY_UTILS_COMPILE_EXAMPLES "Compile trajectory_utils examples" FALSE)
@@ -85,6 +90,27 @@ if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
         ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
         TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
         ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
+    endif()
+
+    if(${OpenSoT_FOUND} AND ${srdfdom_advr_FOUND} AND ${iDynTree_FOUND})
+        ADD_EXECUTABLE(exampleOpenSoT example/exampleOpenSoT.cpp)
+        TARGET_LINK_LIBRARIES(exampleOpenSoT ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
+        ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${OpenSoT_LIBRARIES} ${XBotInterface_LIBRARIES}
+        ${srdfdom_advr_LIBRARIES} ${ModelInterfaceIDYNUTILS_LIBRARIES}
+        ${conversion_utils_YARP_LIBRARIES} ${idynutils2_LIBRARIES})
+
+       catkin_package(
+              INCLUDE_DIRS include
+              LIBRARIES trajectory_utils
+              CATKIN_DEPENDS roscpp
+              DEPENDS system_lib
+              )
+
+       install(TARGETS exampleOpenSoT
+              ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+              LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+              RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+              )
     endif()
 endif()
 

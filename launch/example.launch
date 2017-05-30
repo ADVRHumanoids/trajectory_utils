@@ -1,5 +1,22 @@
 <launch>
 
+<!-- send the coman robot XML to param server -->
+ <param name="robot_description" command="$(find xacro)/xacro.py '$(find coman_urdf)/urdf/coman.urdf'" />
+ <param name="robot_description_semantic" textfile="$(find coman_srdf)/srdf/coman.srdf" />   
+ 
+<!-- start robot state publisher -->
+<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
+ <param name="publish_frequency" type="double" value="250.0" />
+</node>
+
+<!-- IK node -->
+<node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
+ <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/external/OpenSoT/tests/configs/coman/configs/config_coman.yaml" />
+ <param name="urdf_path"   value="$(find coman_urdf)/urdf/coman.urdf" />
+ <param name="srdf_path"   value="$(find coman_srdf)/srdf/coman.srdf" /> 
+</node>
+
+<!-- Trajectory Designer nodes -->
 <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig1" output="screen">
   <param name="base_link" value="torso" />
   <param name="distal_link" value="LSoftHand" />
@@ -11,4 +28,5 @@
   <param name="distal_link" value="RSoftHand" />
   <param name="dT" value="0.01" />
 </node>
+
 </launch>
