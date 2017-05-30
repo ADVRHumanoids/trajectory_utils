@@ -18,6 +18,7 @@ nav_msgs::Path right_arm_trj;
 
 OpenSoT::AutoStack::Ptr auto_stack;
 Eigen::VectorXd q;
+Eigen::VectorXd q0;
 boost::shared_ptr<idynutils2> robot;
 OpenSoT::solvers::QPOases_sot::Ptr solver;
 XBot::ModelInterfaceIDYNUTILS::Ptr model_ptr;
@@ -36,25 +37,19 @@ bool solve = false;
 
 bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
-    q.setZero(q.size());
-    q[model_ptr->getDofIndex("LShSag")] =  20.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("LShLat")] = 10.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("LElbj")] = -80.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("RShSag")] =  20.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("RShLat")] = -10.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("RElbj")] = -80.0*M_PI/180.0;
+    q = q0;
     robot->updateiDynTreeModel(q, true);
 
 
     left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
-                                                        //"LSoftHand", "torso"));
+
     left_arm->setOrientationErrorGain(0.1);
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
-                                                        //"RSoftHand", "torso"));
+
     right_arm->setOrientationErrorGain(0.1);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
 
@@ -139,13 +134,19 @@ int main(int argc, char *argv[])
     if(!model_ptr)
         std::cout<<"pointer is NULL "<<model_ptr.get()<<std::endl;
 
-    q.resize(model_ptr->getJointNum()); q.setZero(q.size());
-    q[model_ptr->getDofIndex("LShSag")] =  20.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("LShLat")] = 10.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("LElbj")] = -80.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("RShSag")] =  20.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("RShLat")] = -10.0*M_PI/180.0;
-    q[model_ptr->getDofIndex("RElbj")] = -80.0*M_PI/180.0;
+    q0.resize(model_ptr->getJointNum()); q0.setZero(q0.size());
+    std::map<std::string,double> joints_initial_value;
+    nh.getParam("initial_configuration", joints_initial_value);
+    if(joints_initial_value.size() > 0)
+    {
+        std::map<std::string, double>::iterator it = joints_initial_value.begin();
+        while (it != joints_initial_value.end()) {
+            q0[model_ptr->getDofIndex(it->first)] = it->second;
+            it++;
+        }
+    }
+    q = q0;
+
     robot->updateiDynTreeModel(q, true);
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
