@@ -34,11 +34,6 @@ bool solve = false;
 
 bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
-    solve = true;
-}
-
-bool reset_solver(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
-{
     q.setZero(q.size());
     q[model_ptr->getDofIndex("LShSag")] =  20.0*M_PI/180.0;
     q[model_ptr->getDofIndex("LShLat")] = 10.0*M_PI/180.0;
@@ -51,8 +46,10 @@ bool reset_solver(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
     left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
                                                         "LSoftHand", "torso"));
+    left_arm->setOrientationErrorGain(0.1);
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                         "RSoftHand", "torso"));
+    right_arm->setOrientationErrorGain(0.1);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
 
 
@@ -61,20 +58,19 @@ bool reset_solver(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->getJointLimits(qmin, qmax);
     joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
 
-    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, q.size()));
+    //vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, q.size()));
 
     auto_stack = (left_arm + right_arm)/
-                 (postural)<<joint_lims<<vel_lims;
+                 (postural)<<joint_lims;//<<vel_lims;
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
                                                   auto_stack->getBounds(), 1e10));
 
-    solve = false;
-
     left_counter = -1;
     right_counter = -1;
 
+    solve = true;
 }
 
 void left_cb(const nav_msgs::Path::ConstPtr& msg)
@@ -118,6 +114,7 @@ int main(int argc, char *argv[])
     nh.getParam("srdf_path", srdf_path);
     ROS_INFO("SRDF PATH: %s", srdf_path.c_str());
 
+
     robot.reset( new idynutils2("robot", urdf_path, srdf_path));
     model_ptr = std::dynamic_pointer_cast<XBot::ModelInterfaceIDYNUTILS>
             (XBot::ModelInterface::getModel(config_path));
@@ -136,35 +133,14 @@ int main(int argc, char *argv[])
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
 
-    left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
-                                                        "LSoftHand", "torso"));
-    right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
-                                                        "RSoftHand", "torso"));
-    postural.reset(new OpenSoT::tasks::velocity::Postural(q));
-
-    Eigen::VectorXd qmin, qmax;
-    model_ptr->getJointLimits(qmin, qmax);
-    joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
-
-    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, q.size()));
-
-    auto_stack = (left_arm + right_arm)/
-                 (postural)<<joint_lims<<vel_lims;
-    auto_stack->update(q);
-
-    solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e10));
 
     ros::Subscriber sub_left_arm =  nh.subscribe("/LSoftHand_trj_viz", 1000, left_cb);
     ros::Subscriber sub_right_arm = nh.subscribe("/RSoftHand_trj_viz", 1000, right_cb);
     ros::ServiceServer service = nh.advertiseService("/IK", service_cb);
-    ros::ServiceServer service2 = nh.advertiseService("/reset_solver", reset_solver);
 
 
     Eigen::VectorXd dq(q.size()); dq.setZero(dq.size());
     ROS_INFO("Running example_open_sot_node");
-    int left_counter = -1;
-    int right_counter = -1;
     while(ros::ok())
     {
         KDL::Frame l_goal; l_goal.Identity();
@@ -194,23 +170,16 @@ int main(int argc, char *argv[])
 
             if(right_counter == right_arm_trj.poses.size() &&
                left_counter == left_arm_trj.poses.size()){
-                right_counter = -1;
-                left_counter = -1;
                 solve = false;
             }
 
         }
 
-        if(robot)
+        if(solve){
             robot->updateiDynTreeModel(q, true);
 
-        if(auto_stack)
             auto_stack->update(q);
 
-
-
-
-        if(solver){
             if(solver->solve(dq))
                 q+=dq;
             else

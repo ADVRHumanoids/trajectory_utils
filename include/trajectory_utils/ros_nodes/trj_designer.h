@@ -35,9 +35,10 @@ public:
         start_pose = getRobotActualPose();
         initial_pose = start_pose;
 
-        MakeMarker(distal_link, false,
+        MakeMarker(distal_link, base_link, false,
                    visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,
                    true);
+
 
         MakeMenu();
 
@@ -145,11 +146,12 @@ public:
 
 
     void MakeMarker( const std::string& distal_link,
+                const std::string& base_link,
                 bool fixed,
                 unsigned int interaction_mode,
                 bool show_6dof)
     {
-      int_marker.header.frame_id = distal_link;
+      int_marker.header.frame_id = base_link;
       int_marker.scale = 0.2;
 
       int_marker.name = distal_link;
@@ -215,6 +217,15 @@ public:
         control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
         int_marker.controls.push_back(control);
       }
+
+      int_marker.pose.position.x = start_pose.p.x();
+      int_marker.pose.position.y = start_pose.p.y();
+      int_marker.pose.position.z = start_pose.p.z();
+      double qx,qy,qz,qw; start_pose.M.GetQuaternion(qx,qy,qz,qw);
+      int_marker.pose.orientation.x = qx;
+      int_marker.pose.orientation.y = qy;
+      int_marker.pose.orientation.z = qz;
+      int_marker.pose.orientation.w = qw;
 
       _server.insert(int_marker,
                     boost::bind(boost::mem_fn(&Marker6DoFs::MarkerFeedback),
@@ -296,6 +307,7 @@ public:
     void MarkerFeedback(
         const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
+        //In base_link
         tf::poseMsgToKDL(feedback->pose, actual_pose);
     }
 
@@ -362,7 +374,7 @@ public:
         seg.start = start_pose;
 
 
-        seg.end = getRobotActualPose()*actual_pose;
+        seg.end = actual_pose;
 
 
         //seg.end = actual_pose;
@@ -371,7 +383,7 @@ public:
         segments_trj.push_back(seg);
 
         //start_pose = actual_pose;
-        start_pose = getRobotActualPose()*actual_pose;
+        start_pose = actual_pose;
 
     }
 
@@ -414,11 +426,11 @@ public:
         {
             segment_trj trj = segments_trj[segments_trj.size()-1];
 
-            last_pose_KDL = getRobotActualPose().Inverse()*trj.end;
+            last_pose_KDL = trj.end;
             //last_pose_KDL = initial_pose.Inverse()*trj.end;
         }
         else
-            last_pose_KDL.Identity();
+            last_pose_KDL = initial_pose;
 
         tf::poseKDLToMsg(last_pose_KDL, last_pose);
 
