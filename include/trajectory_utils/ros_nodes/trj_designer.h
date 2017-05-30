@@ -103,13 +103,20 @@ public:
             menu_handler.setCheckState( T_last, interactive_markers::MenuHandler::UNCHECKED );
         }
 
-        //#2ResetMarker
+        //#2 Arc
+        circual_entry = menu_handler.insert("Arc");
+        reverse_entry = menu_handler.insert(circual_entry, "Reverse",
+            boost::bind(boost::mem_fn(&Marker6DoFs::ReverseMenuCallBack),this, _1));
+        reverse = 1;
+        menu_handler.setCheckState(reverse_entry, interactive_markers::MenuHandler::UNCHECKED);
+
+        //#3 ResetMarker
         reset_marker_entry = menu_handler.insert("Reset Marker Pose",
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetMarkerCb), this, _1));
         menu_handler.setCheckState(reset_marker_entry, interactive_markers::MenuHandler::UNCHECKED);
 
 
-        //#3 ResetTrj
+        //#4 ResetTrj
         reset_trj_entry = menu_handler.insert("Reset Trajectory");
         reset_last_entry = menu_handler.insert(reset_trj_entry, "Last",
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetLastTrjCb), this, _1));
@@ -118,7 +125,7 @@ public:
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetTrjCb), this, _1));
         menu_handler.setCheckState(reset_all_entry, interactive_markers::MenuHandler::UNCHECKED);
 
-        //#4 Goal
+        //#5 Goal
         goal_entry = menu_handler.insert("Goal");
         remove_goal_entry = menu_handler.insert(goal_entry, "Remove Goal",
             boost::bind(boost::mem_fn(&Marker6DoFs::RemoveGoalCb), this, _1));
@@ -302,6 +309,20 @@ public:
     {
         //In base_link
         tf::poseMsgToKDL(feedback->pose, actual_pose);
+    }
+
+    void ReverseMenuCallBack(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        reverse *= -1;
+        if(reverse == 1)
+            menu_handler.setCheckState(reverse_entry, interactive_markers::MenuHandler::UNCHECKED);
+        else if(reverse == -1)
+            menu_handler.setCheckState(reverse_entry, interactive_markers::MenuHandler::CHECKED);
+
+
+        menu_handler.reApply(_server);
+        _server.applyChanges();
     }
 
     void MinJerkToGoalMenuCallBack(
@@ -540,6 +561,18 @@ private:
 
     tf::TransformListener _listener;
     tf::StampedTransform _transform;
+
+    interactive_markers::MenuHandler::EntryHandle circual_entry;
+    interactive_markers::MenuHandler::EntryHandle reverse_entry;
+    interactive_markers::MenuHandler::EntryHandle circularXY_entry;
+    interactive_markers::MenuHandler::EntryHandle circularXZ_entry;
+    interactive_markers::MenuHandler::EntryHandle circularYZ_entry;
+    interactive_markers::MenuHandler::EntryHandle T_XY_entry;
+    interactive_markers::MenuHandler::EntryHandle T_XZ_entry;
+    interactive_markers::MenuHandler::EntryHandle T_YZ_entry;
+    int reverse;
+
+
 
 };
 
