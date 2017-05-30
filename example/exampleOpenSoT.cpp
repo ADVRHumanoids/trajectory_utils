@@ -26,6 +26,8 @@ OpenSoT::tasks::velocity::Cartesian::Ptr right_arm;
 OpenSoT::tasks::velocity::Postural::Ptr postural;
 OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
 OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
+std::string left_arm_distal_link, left_arm_base_link;
+std::string right_arm_distal_link, right_arm_base_link;
 
 int left_counter = -1;
 int right_counter = -1;
@@ -45,10 +47,14 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
 
     left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
-                                                        "LSoftHand", "torso"));
+                                                           left_arm_distal_link,
+                                                           left_arm_base_link));
+                                                        //"LSoftHand", "torso"));
     left_arm->setOrientationErrorGain(0.1);
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
-                                                        "RSoftHand", "torso"));
+                                                            right_arm_distal_link,
+                                                            right_arm_base_link));
+                                                        //"RSoftHand", "torso"));
     right_arm->setOrientationErrorGain(0.1);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
 
@@ -115,6 +121,17 @@ int main(int argc, char *argv[])
     ROS_INFO("SRDF PATH: %s", srdf_path.c_str());
 
 
+    nh.getParam("left_arm_distal_link", left_arm_distal_link);
+    ROS_INFO("left_arm_distal_link: %s", left_arm_distal_link.c_str());
+    nh.getParam("right_arm_distal_link", right_arm_distal_link);
+    ROS_INFO("right_arm_distal_link: %s", right_arm_distal_link.c_str());
+    nh.getParam("left_arm_base_link", left_arm_base_link);
+    ROS_INFO("left_arm_base_link: %s", left_arm_base_link.c_str());
+    nh.getParam("right_arm_base_link", right_arm_base_link);
+    ROS_INFO("right_arm_base_link: %s", right_arm_base_link.c_str());
+
+
+
     robot.reset( new idynutils2("robot", urdf_path, srdf_path));
     model_ptr = std::dynamic_pointer_cast<XBot::ModelInterfaceIDYNUTILS>
             (XBot::ModelInterface::getModel(config_path));
@@ -134,8 +151,8 @@ int main(int argc, char *argv[])
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
 
 
-    ros::Subscriber sub_left_arm =  nh.subscribe("/LSoftHand_trj_viz", 1000, left_cb);
-    ros::Subscriber sub_right_arm = nh.subscribe("/RSoftHand_trj_viz", 1000, right_cb);
+    ros::Subscriber sub_left_arm =  nh.subscribe("/"+left_arm_distal_link+"_trj_viz", 1000, left_cb);
+    ros::Subscriber sub_right_arm = nh.subscribe("/"+right_arm_distal_link+"_trj_viz", 1000, right_cb);
     ros::ServiceServer service = nh.advertiseService("/IK", service_cb);
 
 
