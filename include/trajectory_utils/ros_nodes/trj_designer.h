@@ -15,10 +15,17 @@
 namespace trj_designer{
 
 struct segment_trj{
+    //Minimal set for MinJerk
     std::string type;
     double T;
     KDL::Frame start;
     KDL::Frame end;
+
+    //These extra are for SemiCircular
+    KDL::Rotation end_rot;
+    double angle_rot;
+    KDL::Vector circle_center;
+    KDL::Vector plane_normal;
 };
 
 class Marker6DoFs{
@@ -104,7 +111,7 @@ public:
         }
 
         //#2 Arc
-        circual_entry = menu_handler.insert("Arc");
+        circual_entry = menu_handler.insert("SemiCircular");
         reverse_entry = menu_handler.insert(circual_entry, "Reverse",
             boost::bind(boost::mem_fn(&Marker6DoFs::ReverseMenuCallBack),this, _1));
         reverse = 1;
@@ -358,19 +365,58 @@ public:
     void CircularXYMenuCallBack(
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
+        KDL::Frame dist = start_pose.Inverse()*actual_pose;
+        if(std::fabs(dist.p.z()) > 1e-4)
+            ROS_ERROR("Target frame is not in XY plane!");
+        else
+        {
+            segment_trj seg;
 
+            seg.start = start_pose;
+
+            KDL::Vector n(0,0,1); n = start_pose.M*n; n=reverse*n;
+            seg.plane_normal = n;
+
+            seg.circle_center = start_pose.p + start_pose.M*(dist.p)/2.;
+            seg.angle_rot = M_PI;
+
+            seg.end_rot = actual_pose.M;
+            seg.end = actual_pose;
+
+            seg.type = "SEMI_CIRCLE";
+            seg.T = feedback->menu_entry_id-2;
+
+            segments_trj.push_back(seg);
+
+            //start_pose = actual_pose;
+            start_pose = actual_pose;
+        }
     }
 
     void CircularXZMenuCallBack(
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
+        KDL::Frame dist = start_pose.Inverse()*actual_pose;
+        ROS_WARN("dist.p.y: %f", std::fabs(dist.p.y()));
+        if(std::fabs(dist.p.y()) > 1e-4)
+            ROS_ERROR("Target frame is not in XZ plane!");
+        else
+        {
 
+        }
     }
 
     void CircularYZMenuCallBack(
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
+        KDL::Frame dist = start_pose.Inverse()*actual_pose;
+        ROS_WARN("dist.p.x: %f", std::fabs(dist.p.x()));
+        if(std::fabs(dist.p.x()) > 1e-4)
+            ROS_ERROR("Target frame is not in YZ plane!");
+        else
+        {
 
+        }
     }
 
     void MinJerkToGoalMenuCallBack(
@@ -552,6 +598,10 @@ public:
                 segment_trj trj = segments_trj[i];
                 if(trj.type == "MIN_JERK"){
                     trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
+                }
+                else if(trj.type == "SEMI_CIRCLE"){
+                    trj_gen->addArcTrj(trj.start, trj.end_rot, trj.angle_rot,
+                                       trj.circle_center, trj.plane_normal, trj.T);
                 }
             }
 
