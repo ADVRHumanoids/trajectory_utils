@@ -11,7 +11,7 @@
 
 
 <arg name="base_link" value="Waist" />
-<arg name="left_arm_distal_link" value="LSoftHandLink" />
+<arg name="left_arm_distal_link" value="LSoftHand" />
 <arg name="right_arm_distal_link" value="RSoftHandLink" />
 
 

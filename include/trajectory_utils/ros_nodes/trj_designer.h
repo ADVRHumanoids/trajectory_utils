@@ -232,9 +232,9 @@ public:
                                 this, _1));
     }
 
-    visualization_msgs::Marker makeBox( visualization_msgs::InteractiveMarker &msg )
+    visualization_msgs::Marker makeSphere( visualization_msgs::InteractiveMarker &msg )
     {
-      marker.type = visualization_msgs::Marker::CUBE;
+      marker.type = visualization_msgs::Marker::SPHERE;
       marker.scale.x = msg.scale * 0.45;
       marker.scale.y = msg.scale * 0.45;
       marker.scale.z = msg.scale * 0.45;
@@ -252,33 +252,36 @@ public:
 
         boost::shared_ptr<const urdf::Link> link = _urdf.getLink(_distal_link);
 
-        if(link->visual->geometry->type == urdf::Geometry::MESH)
+        if(link->visual)
         {
-            marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+            if(link->visual->geometry->type == urdf::Geometry::MESH)
+            {
+                marker.type = visualization_msgs::Marker::MESH_RESOURCE;
 
-            boost::shared_ptr<urdf::Mesh> mesh =
-                    boost::static_pointer_cast<urdf::Mesh>(link->visual->geometry);
+                boost::shared_ptr<urdf::Mesh> mesh =
+                        boost::static_pointer_cast<urdf::Mesh>(link->visual->geometry);
 
-            marker.mesh_resource = mesh->filename;
+                marker.mesh_resource = mesh->filename;
 
-            marker.pose.position.x = link->visual->origin.position.x;
-            marker.pose.position.y = link->visual->origin.position.y;
-            marker.pose.position.z = link->visual->origin.position.z;
-            marker.pose.orientation.x = link->visual->origin.rotation.x;
-            marker.pose.orientation.y = link->visual->origin.rotation.y;
-            marker.pose.orientation.z = link->visual->origin.rotation.z;
-            marker.pose.orientation.w = link->visual->origin.rotation.w;
+                marker.pose.position.x = link->visual->origin.position.x;
+                marker.pose.position.y = link->visual->origin.position.y;
+                marker.pose.position.z = link->visual->origin.position.z;
+                marker.pose.orientation.x = link->visual->origin.rotation.x;
+                marker.pose.orientation.y = link->visual->origin.rotation.y;
+                marker.pose.orientation.z = link->visual->origin.rotation.z;
+                marker.pose.orientation.w = link->visual->origin.rotation.w;
 
-            marker.color.r = 0.5;
-            marker.color.g = 0.5;
-            marker.color.b = 0.5;
+                marker.color.r = 0.5;
+                marker.color.g = 0.5;
+                marker.color.b = 0.5;
 
-            marker.scale.x = mesh->scale.x;
-            marker.scale.y = mesh->scale.y;
-            marker.scale.z = mesh->scale.z;
+                marker.scale.x = mesh->scale.x;
+                marker.scale.y = mesh->scale.y;
+                marker.scale.z = mesh->scale.z;
+            }
         }
         else
-            makeBox(msg);
+            makeSphere(msg);
 
         marker.color.a = .9;
         return marker;
@@ -289,16 +292,6 @@ public:
     {
       control2.always_visible = true;
       control2.markers.push_back( makeSTL(msg) );
-      msg.controls.push_back( control2 );
-
-      return msg.controls.back();
-    }
-
-    visualization_msgs::InteractiveMarkerControl& makeBoxControl(
-            visualization_msgs::InteractiveMarker &msg )
-    {
-      control2.always_visible = true;
-      control2.markers.push_back( makeBox(msg) );
       msg.controls.push_back( control2 );
 
       return msg.controls.back();
