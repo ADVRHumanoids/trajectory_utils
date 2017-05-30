@@ -2,8 +2,90 @@
 #include <ModelInterfaceIDYNUTILS/ModelInterfaceIDYNUTILS.h>
 #include <advr_humanoids_common_utils/idynutils.h>
 #include <sensor_msgs/JointState.h>
+#include <OpenSoT/tasks/velocity/Cartesian.h>
+#include <OpenSoT/tasks/velocity/Postural.h>
+#include <OpenSoT/constraints/velocity/JointLimits.h>
+#include <OpenSoT/constraints/velocity/VelocityLimits.h>
+#include <OpenSoT/utils/AutoStack.h>
+#include <nav_msgs/Path.h>
+#include <kdl_conversions/kdl_msg.h>
+#include <std_srvs/Empty.h>
 
 static void null_deleter(idynutils2 *) {}
+
+nav_msgs::Path left_arm_trj;
+nav_msgs::Path right_arm_trj;
+
+OpenSoT::AutoStack::Ptr auto_stack;
+Eigen::VectorXd q;
+boost::shared_ptr<idynutils2> robot;
+OpenSoT::solvers::QPOases_sot::Ptr solver;
+XBot::ModelInterfaceIDYNUTILS::Ptr model_ptr;
+OpenSoT::tasks::velocity::Cartesian::Ptr left_arm;
+OpenSoT::tasks::velocity::Cartesian::Ptr right_arm;
+OpenSoT::tasks::velocity::Postural::Ptr postural;
+OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
+OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
+
+int left_counter = -1;
+int right_counter = -1;
+
+bool solve = false;
+
+bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    solve = true;
+}
+
+bool reset_solver(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    q.setZero(q.size());
+    q[model_ptr->getDofIndex("LShSag")] =  20.0*M_PI/180.0;
+    q[model_ptr->getDofIndex("LShLat")] = 10.0*M_PI/180.0;
+    q[model_ptr->getDofIndex("LElbj")] = -80.0*M_PI/180.0;
+    q[model_ptr->getDofIndex("RShSag")] =  20.0*M_PI/180.0;
+    q[model_ptr->getDofIndex("RShLat")] = -10.0*M_PI/180.0;
+    q[model_ptr->getDofIndex("RElbj")] = -80.0*M_PI/180.0;
+    robot->updateiDynTreeModel(q, true);
+
+
+    left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
+                                                        "LSoftHand", "torso"));
+    right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
+                                                        "RSoftHand", "torso"));
+    postural.reset(new OpenSoT::tasks::velocity::Postural(q));
+
+
+
+    Eigen::VectorXd qmin, qmax;
+    model_ptr->getJointLimits(qmin, qmax);
+    joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
+
+    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, q.size()));
+
+    auto_stack = (left_arm + right_arm)/
+                 (postural)<<joint_lims<<vel_lims;
+    auto_stack->update(q);
+
+    solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
+                                                  auto_stack->getBounds(), 1e10));
+
+    solve = false;
+
+    left_counter = -1;
+    right_counter = -1;
+
+}
+
+void left_cb(const nav_msgs::Path::ConstPtr& msg)
+{
+  left_arm_trj = *(msg.get());
+}
+
+void right_cb(const nav_msgs::Path::ConstPtr& msg)
+{
+  right_arm_trj = *(msg.get());
+}
 
 void publishJointState(const Eigen::VectorXd& q, const XBot::ModelInterfaceIDYNUTILS::Ptr model,
                        const ros::Publisher& joint_pub)
@@ -36,29 +118,109 @@ int main(int argc, char *argv[])
     nh.getParam("srdf_path", srdf_path);
     ROS_INFO("SRDF PATH: %s", srdf_path.c_str());
 
-    idynutils2 robot("robot", urdf_path, srdf_path);
-    XBot::ModelInterfaceIDYNUTILS::Ptr model_ptr;
+    robot.reset( new idynutils2("robot", urdf_path, srdf_path));
     model_ptr = std::dynamic_pointer_cast<XBot::ModelInterfaceIDYNUTILS>
             (XBot::ModelInterface::getModel(config_path));
-    model_ptr->loadModel(boost::shared_ptr<idynutils2>(&robot, &null_deleter));
+    model_ptr->loadModel(boost::shared_ptr<idynutils2>(&(*(robot.get())), &null_deleter));
     if(!model_ptr)
         std::cout<<"pointer is NULL "<<model_ptr.get()<<std::endl;
 
-    Eigen::VectorXd q(model_ptr->getJointNum()); q.setZero(q.size());
+    q.resize(model_ptr->getJointNum()); q.setZero(q.size());
     q[model_ptr->getDofIndex("LShSag")] =  20.0*M_PI/180.0;
     q[model_ptr->getDofIndex("LShLat")] = 10.0*M_PI/180.0;
     q[model_ptr->getDofIndex("LElbj")] = -80.0*M_PI/180.0;
     q[model_ptr->getDofIndex("RShSag")] =  20.0*M_PI/180.0;
     q[model_ptr->getDofIndex("RShLat")] = -10.0*M_PI/180.0;
     q[model_ptr->getDofIndex("RElbj")] = -80.0*M_PI/180.0;
+    robot->updateiDynTreeModel(q, true);
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
 
+    left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
+                                                        "LSoftHand", "torso"));
+    right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
+                                                        "RSoftHand", "torso"));
+    postural.reset(new OpenSoT::tasks::velocity::Postural(q));
+
+    Eigen::VectorXd qmin, qmax;
+    model_ptr->getJointLimits(qmin, qmax);
+    joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
+
+    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, q.size()));
+
+    auto_stack = (left_arm + right_arm)/
+                 (postural)<<joint_lims<<vel_lims;
+    auto_stack->update(q);
+
+    solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
+                                                  auto_stack->getBounds(), 1e10));
+
+    ros::Subscriber sub_left_arm =  nh.subscribe("/LSoftHand_trj_viz", 1000, left_cb);
+    ros::Subscriber sub_right_arm = nh.subscribe("/RSoftHand_trj_viz", 1000, right_cb);
+    ros::ServiceServer service = nh.advertiseService("/IK", service_cb);
+    ros::ServiceServer service2 = nh.advertiseService("/reset_solver", reset_solver);
+
+
+    Eigen::VectorXd dq(q.size()); dq.setZero(dq.size());
     ROS_INFO("Running example_open_sot_node");
+    int left_counter = -1;
+    int right_counter = -1;
     while(ros::ok())
     {
+        KDL::Frame l_goal; l_goal.Identity();
+        KDL::Frame r_goal; r_goal.Identity();
+
+
+
+        if(solve)
+        {
+            if(left_arm_trj.poses.size() > 0){
+                left_counter++;
+                if(left_counter < left_arm_trj.poses.size()){
+                    geometry_msgs::PoseStamped p = left_arm_trj.poses[left_counter];
+                    tf::PoseMsgToKDL(p.pose, l_goal);
+                    left_arm->setReference(l_goal);
+                }
+            }
+
+            if(right_arm_trj.poses.size() > 0){
+                right_counter++;
+                if(right_counter < right_arm_trj.poses.size()){
+                    geometry_msgs::PoseStamped p = right_arm_trj.poses[right_counter];
+                    tf::PoseMsgToKDL(p.pose, r_goal);
+                    right_arm->setReference(r_goal);
+                }
+            }
+
+            if(right_counter == right_arm_trj.poses.size() &&
+               left_counter == left_arm_trj.poses.size()){
+                right_counter = -1;
+                left_counter = -1;
+                solve = false;
+            }
+
+        }
+
+        if(robot)
+            robot->updateiDynTreeModel(q, true);
+
+        if(auto_stack)
+            auto_stack->update(q);
+
+
+
+
+        if(solver){
+            if(solver->solve(dq))
+                q+=dq;
+            else
+                ROS_ERROR("Solver error!!!");
+        }
+
         publishJointState(q, model_ptr, joint_pub);
         ros::spinOnce();
+
+        usleep(100000);
     }
 
 }

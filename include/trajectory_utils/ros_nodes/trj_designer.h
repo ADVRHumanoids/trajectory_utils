@@ -28,48 +28,16 @@ public:
                 const urdf::Model& robot_urdf,
                 ros::NodeHandle& n):
         _server(server),
-        initial_pose(KDL::Frame::Identity()),
         _base_link(base_link), _distal_link(distal_link),
         _dT(dT), _urdf(robot_urdf)
     {
-        tf::TransformListener listener;
-        tf::StampedTransform transform;
-        for(unsigned int i = 0; i < 10; ++i){
-        try{
-            ros::Time now = ros::Time::now();
-            listener.waitForTransform(base_link, distal_link,now,ros::Duration(1.0));
 
-            listener.lookupTransform(base_link, distal_link,
-                ros::Time(), transform);
-        }
-        catch (tf::TransformException ex){
-            ROS_ERROR("%s",ex.what());
-            ros::Duration(1.0).sleep();
-        }}
-        KDL::Frame transform_KDL; transform_KDL = transform_KDL.Identity();
-        transform_KDL.p.x(transform.getOrigin().x());
-        transform_KDL.p.y(transform.getOrigin().y());
-        transform_KDL.p.z(transform.getOrigin().z());
-
-        transform_KDL.M = transform_KDL.M.Quaternion(
-                    transform.getRotation().getX(), transform.getRotation().getY(),
-                    transform.getRotation().getZ(), transform.getRotation().getW()
-                    );
-
-        initial_pose = transform_KDL*initial_pose;
-        start_pose = initial_pose;
-
+        start_pose = getRobotActualPose();
+        initial_pose = start_pose;
 
         MakeMarker(distal_link, false,
                    visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,
                    true);
-
-        ROS_WARN("%s initial pose wrt %s is: ", int_marker.name.c_str(),
-                 base_link.c_str());
-        double qx, qy, qz, qw;
-        initial_pose.M.GetQuaternion(qx, qy, qz, qw);
-        ROS_WARN("      pose:   [%f, %f, %f]", initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z());
-        ROS_WARN("      quat:   [%f, %f, %f, %f]", qx, qy, qz, qw);
 
         MakeMenu();
 
@@ -329,7 +297,6 @@ public:
         const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
         tf::poseMsgToKDL(feedback->pose, actual_pose);
-        actual_pose = initial_pose*actual_pose;
     }
 
     void MinJerkToGoalMenuCallBack(
@@ -393,13 +360,46 @@ public:
         segment_trj seg;
         seg.type = trj_type;
         seg.start = start_pose;
-        seg.end = actual_pose;
+
+
+        seg.end = getRobotActualPose()*actual_pose;
+
+
+        //seg.end = actual_pose;
         seg.T = T;
 
         segments_trj.push_back(seg);
 
-        start_pose = actual_pose;
+        //start_pose = actual_pose;
+        start_pose = getRobotActualPose()*actual_pose;
 
+    }
+
+    KDL::Frame getRobotActualPose()
+    {
+        for(unsigned int i = 0; i < 10; ++i){
+        try{
+            ros::Time now = ros::Time::now();
+            _listener.waitForTransform(_base_link, _distal_link,now,ros::Duration(1.0));
+
+            _listener.lookupTransform(_base_link, _distal_link,
+                ros::Time(), _transform);
+        }
+        catch (tf::TransformException ex){
+            ROS_ERROR("%s",ex.what());
+            ros::Duration(1.0).sleep();
+        }}
+        KDL::Frame transform_KDL; transform_KDL = transform_KDL.Identity();
+        transform_KDL.p.x(_transform.getOrigin().x());
+        transform_KDL.p.y(_transform.getOrigin().y());
+        transform_KDL.p.z(_transform.getOrigin().z());
+
+        transform_KDL.M = transform_KDL.M.Quaternion(
+                    _transform.getRotation().getX(), _transform.getRotation().getY(),
+                    _transform.getRotation().getZ(), _transform.getRotation().getW()
+                    );
+
+        return transform_KDL;
     }
 
 
@@ -413,7 +413,9 @@ public:
         if(segments_trj.size() > 0)
         {
             segment_trj trj = segments_trj[segments_trj.size()-1];
-            last_pose_KDL = initial_pose.Inverse()*trj.end;
+
+            last_pose_KDL = getRobotActualPose().Inverse()*trj.end;
+            //last_pose_KDL = initial_pose.Inverse()*trj.end;
         }
         else
             last_pose_KDL.Identity();
@@ -487,8 +489,7 @@ public:
         }
     }
 
-    KDL::Frame getActualPose(){return actual_pose;}
-    KDL::Frame getInitialPose(){return initial_pose;}
+
     std::string getBaseLink(){return _base_link;}
     std::string getDistalLink(){return _distal_link;}
 
@@ -532,6 +533,8 @@ private:
     interactive_markers::MenuHandler::EntryHandle move_to_goal_entry;
     interactive_markers::MenuHandler::EntryHandle goal_T_last;
 
+    tf::TransformListener _listener;
+    tf::StampedTransform _transform;
 
 };
 

@@ -29,6 +29,7 @@ int main(int argc, char** argv)
 
   ROS_INFO("Running Trajectory Designer...");
   while(ros::ok()){
+
       marker.publishTrjs();
       ros::spinOnce();}
 }
