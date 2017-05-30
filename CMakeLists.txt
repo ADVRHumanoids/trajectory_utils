@@ -36,6 +36,10 @@ FIND_PACKAGE(rviz_visual_tools QUIET)
 FIND_PACKAGE(interactive_markers QUIET)
 FIND_PACKAGE(catkin QUIET)
 
+#find_package(srdfdom_advr)
+#find_package(iDynTree)
+#find_package(OpenSoT QUIET)
+
 # compilation flags
 option(TRAJECTORY_UTILS_COMPILE_EXAMPLES "Compile trajectory_utils examples" FALSE)
 option(TRAJECTORY_UTILS_COMPILE_TESTS "Compile trajectory_utils tests" FALSE)
