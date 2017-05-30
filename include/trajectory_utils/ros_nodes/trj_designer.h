@@ -109,6 +109,36 @@ public:
             boost::bind(boost::mem_fn(&Marker6DoFs::ReverseMenuCallBack),this, _1));
         reverse = 1;
         menu_handler.setCheckState(reverse_entry, interactive_markers::MenuHandler::UNCHECKED);
+        circularXY_entry = menu_handler.insert(circual_entry, "XY in T [sec]");
+        for ( int i=0; i<SECS; i++ )
+        {
+            std::ostringstream s;
+            s <<i+1;
+            T_XY_entry = menu_handler.insert( circularXY_entry, s.str(),
+                boost::bind(boost::mem_fn(&Marker6DoFs::CircularXYMenuCallBack),
+                            this, _1));
+            menu_handler.setCheckState( T_XY_entry, interactive_markers::MenuHandler::UNCHECKED );
+        }
+        circularYZ_entry = menu_handler.insert(circual_entry, "YZ in T [sec]");
+        for ( int i=0; i<SECS; i++ )
+        {
+            std::ostringstream s;
+            s <<i+1;
+            T_YZ_entry = menu_handler.insert( circularYZ_entry, s.str(),
+                boost::bind(boost::mem_fn(&Marker6DoFs::CircularYZMenuCallBack),
+                            this, _1));
+            menu_handler.setCheckState( T_YZ_entry, interactive_markers::MenuHandler::UNCHECKED );
+        }
+        circularXZ_entry = menu_handler.insert(circual_entry, "XZ in T [sec]");
+        for ( int i=0; i<SECS; i++ )
+        {
+            std::ostringstream s;
+            s <<i+1;
+            T_XZ_entry = menu_handler.insert( circularXZ_entry, s.str(),
+                boost::bind(boost::mem_fn(&Marker6DoFs::CircularXZMenuCallBack),
+                            this, _1));
+            menu_handler.setCheckState( T_XZ_entry, interactive_markers::MenuHandler::UNCHECKED );
+        }
 
         //#3 ResetMarker
         reset_marker_entry = menu_handler.insert("Reset Marker Pose",
@@ -323,6 +353,24 @@ public:
 
         menu_handler.reApply(_server);
         _server.applyChanges();
+    }
+
+    void CircularXYMenuCallBack(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+
+    }
+
+    void CircularXZMenuCallBack(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+
+    }
+
+    void CircularYZMenuCallBack(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+
     }
 
     void MinJerkToGoalMenuCallBack(
