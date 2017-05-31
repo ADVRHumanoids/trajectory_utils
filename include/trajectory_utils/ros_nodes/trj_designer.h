@@ -49,6 +49,7 @@ public:
 
         start_pose = getRobotActualPose();
         initial_pose = start_pose;
+        actual_pose = start_pose;
 
         MakeMarker(distal_link, base_link, false,
                    visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,
