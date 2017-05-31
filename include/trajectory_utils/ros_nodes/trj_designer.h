@@ -9,6 +9,8 @@
 #include <trajectory_utils/utils/ros_trj_publisher.h>
 #include <urdf/model.h>
 #include <geometry_msgs/Pose.h>
+#include <trajectory_utils/CartesianTrj.h>
+#include <std_srvs/Empty.h>
 
 #define SECS 5
 
@@ -626,13 +628,16 @@ public:
         }
     }
 
-
+    std::vector<segment_trj> getTrajSegments(){return segments_trj;}
     std::string getBaseLink(){return _base_link;}
     std::string getDistalLink(){return _distal_link;}
+    visualization_msgs::InteractiveMarker getInteractiveMarker(){return int_marker;}
+    double getTime(){return _dT;}
 
+private:
     visualization_msgs::InteractiveMarker int_marker;
     interactive_markers::MenuHandler menu_handler;
-private:
+
     visualization_msgs::InteractiveMarkerControl control;
     visualization_msgs::InteractiveMarkerControl control2;
     visualization_msgs::Marker marker;
@@ -683,8 +688,79 @@ private:
     interactive_markers::MenuHandler::EntryHandle T_YZ_entry;
     int reverse;
 
+};
+
+class trjBroadcaster
+{
+public:
+    trjBroadcaster(Marker6DoFs& trj, ros::NodeHandle& n):
+        _trj(trj)
+    {
+        _service = n.advertiseService("/"+_trj.getDistalLink()+"_getTrj", &trjBroadcaster::service_cb, this);
+        _pub = n.advertise<trajectory_utils::CartesianTrj>("/"+_trj.getDistalLink()+"_trj", 1000);
+    }
+
+    bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    {
+        std::vector<segment_trj> segments =  _trj.getTrajSegments();
+        _trj_gen.reset(new trajectory_utils::trajectory_generator(
+                           _trj.getTime(),
+                           _trj.getBaseLink(), _trj.getDistalLink()));
+        for(unsigned int i = 0; i < segments.size(); ++i)
+        {
+            segment_trj trj = segments[i];
+            if(trj.type == "MIN_JERK"){
+                _trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
+            }
+            else if(trj.type == "SEMI_CIRCLE"){
+                _trj_gen->addArcTrj(trj.start, trj.end_rot, trj.angle_rot,
+                                   trj.circle_center, trj.plane_normal, trj.T);
+            }
+        }
+
+        setTrj();
+
+        _pub.publish(_msg);
+    }
+
+    void setTrj()
+    {
+        _msg.poses.clear();
+
+        trajectory_utils::Cartesian T;
+        KDL::Frame F;
+        double qx,qy,qz,qw;
 
 
+        while (!_trj_gen->isFinished()) {
+            F = _trj_gen->Pos();
+            T.desired_pose.pose.position.x = F.p.x();
+            T.desired_pose.pose.position.y = F.p.y();
+            T.desired_pose.pose.position.z = F.p.z();
+            F.M.GetQuaternion(qx,qy,qz,qw);
+            T.desired_pose.pose.orientation.x = qx;
+            T.desired_pose.pose.orientation.y = qy;
+            T.desired_pose.pose.orientation.z = qz;
+            T.desired_pose.pose.orientation.w = qw;
+
+            T.desired_pose.header.frame_id = _trj.getBaseLink();
+
+            T.distal_frame = _trj.getDistalLink();
+
+            _msg.poses.push_back(T);
+
+            _trj_gen->updateTrj();
+        }
+
+        _msg.header.stamp = ros::Time::now();
+    }
+
+private:
+    Marker6DoFs& _trj;
+    trajectory_utils::CartesianTrj _msg;
+    ros::Publisher _pub;
+    ros::ServiceServer _service;
+    boost::shared_ptr<trajectory_utils::trajectory_generator> _trj_gen;
 };
 
 }

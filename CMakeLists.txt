@@ -36,6 +36,12 @@ FIND_PACKAGE(rviz_visual_tools QUIET)
 FIND_PACKAGE(interactive_markers QUIET)
 FIND_PACKAGE(catkin QUIET)
 
+find_package(catkin REQUIRED COMPONENTS
+  message_generation
+  geometry_msgs
+  std_msgs
+)
+
 find_package(srdfdom_advr REQUIRED)
 find_package(iDynTree REQUIRED)
 find_package(OpenSoT REQUIRED)
@@ -80,6 +86,20 @@ if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools
 endif()
 
 
+        add_message_files(DIRECTORY msg FILES
+              Cartesian.msg
+              CartesianTrj.msg
+              )
+
+        ## Generate added messages and services with any dependencies listed here
+        generate_messages(DEPENDENCIES
+              geometry_msgs
+              std_msgs
+              )
+
+
+
+
 ADD_LIBRARY(trajectory_utils SHARED ${TRAJECTORY_UTILS_SOURCES}
 ${trajectory_utils_INCLUDES})
 TARGET_LINK_LIBRARIES(trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
@@ -114,17 +134,17 @@ if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
     endif()
 endif()
 
-
 if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
     if(${interactive_markers_FOUND} AND ${catkin_FOUND})
         ADD_EXECUTABLE(trajectory_designer src/ros_nodes/trj_designer.cpp)
         TARGET_LINK_LIBRARIES(trajectory_designer trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
             ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${interactive_markers_LIBRARIES})
 
+
        catkin_package(
               INCLUDE_DIRS include
               LIBRARIES trajectory_utils
-              CATKIN_DEPENDS roscpp 
+              CATKIN_DEPENDS roscpp message_runtime geometry_msgs std_msgs
               DEPENDS system_lib
               )
      

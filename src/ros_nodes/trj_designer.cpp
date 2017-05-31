@@ -24,6 +24,7 @@ int main(int argc, char** argv)
 
   interactive_markers::InteractiveMarkerServer server(distal_link+"_trajectory_marker_server");
   trj_designer::Marker6DoFs marker(base_link, distal_link, server, dT, robot_urdf, nh);
+  trj_designer::trjBroadcaster broadcaster(marker, nh);
 
   server.applyChanges();
 
