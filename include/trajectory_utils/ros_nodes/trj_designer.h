@@ -16,9 +16,14 @@
 
 namespace trj_designer{
 
+enum trj_type: int {
+    MIN_JERK = 0,
+    SEMI_CIRCLE = 1
+};
+
 struct segment_trj{
     //Minimal set for MinJerk
-    std::string type;
+    int type;
     double T;
     KDL::Frame start;
     KDL::Frame end;
@@ -378,7 +383,7 @@ public:
         seg.end_rot = actual_pose.M;
         seg.end = actual_pose;
 
-        seg.type = "SEMI_CIRCLE";
+        seg.type = trj_designer::trj_type::SEMI_CIRCLE;
 
         return seg;
     }
@@ -439,7 +444,7 @@ public:
     {
         if(_goal_pose)
         {
-            std::string trj_type = "MIN_JERK";
+            int trj_type = trj_designer::trj_type::MIN_JERK;
             double T = feedback->menu_entry_id-2;
 
 //            ROS_WARN("REQUEST:");
@@ -474,7 +479,7 @@ public:
     void MinJerkMenuCallBack(
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
-        std::string trj_type = "MIN_JERK";
+        int trj_type = trj_designer::trj_type::MIN_JERK;
         double T = feedback->menu_entry_id-2;
 
 //        ROS_WARN("REQUEST:");
@@ -611,10 +616,10 @@ public:
             for(unsigned int i = 0; i < segments_trj.size(); ++i)
             {
                 segment_trj trj = segments_trj[i];
-                if(trj.type == "MIN_JERK"){
+                if(trj.type == trj_designer::trj_type::MIN_JERK){
                     trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
                 }
-                else if(trj.type == "SEMI_CIRCLE"){
+                else if(trj.type == trj_designer::trj_type::SEMI_CIRCLE){
                     trj_gen->addArcTrj(trj.start, trj.end_rot, trj.angle_rot,
                                        trj.circle_center, trj.plane_normal, trj.T);
                 }
@@ -709,10 +714,10 @@ public:
         for(unsigned int i = 0; i < segments.size(); ++i)
         {
             segment_trj trj = segments[i];
-            if(trj.type == "MIN_JERK"){
+            if(trj.type == trj_designer::trj_type::MIN_JERK){
                 _trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
             }
-            else if(trj.type == "SEMI_CIRCLE"){
+            else if(trj.type == trj_designer::trj_type::SEMI_CIRCLE){
                 _trj_gen->addArcTrj(trj.start, trj.end_rot, trj.angle_rot,
                                    trj.circle_center, trj.plane_normal, trj.T);
             }
