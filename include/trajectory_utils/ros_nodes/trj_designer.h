@@ -46,6 +46,11 @@ public:
         _base_link(base_link), _distal_link(distal_link),
         _dT(dT), _urdf(robot_urdf)
     {
+        offset_menu_entry_goal_min_jerk = 0;
+        offset_menu_entry_min_jerk = 0;
+        offset_menu_entry_semicircular_XY = 0;
+        offset_menu_entry_semicircular_XZ = 0;
+        offset_menu_entry_semicircular_YZ = 0;
 
         start_pose = getRobotActualPose();
         initial_pose = start_pose;
@@ -106,9 +111,14 @@ public:
 
     void MakeMenu()
     {
+        int insert_counter = 0;
+
         //#1 Min Jerk
         min_jerk_entry = menu_handler.insert("MinJerk");
+        insert_counter++;
         T_entry = menu_handler.insert(min_jerk_entry, "T [sec]");
+        insert_counter++;
+        offset_menu_entry_min_jerk = insert_counter;
         for ( int i=0; i<SECS; i++ )
         {
             std::ostringstream s;
@@ -116,16 +126,21 @@ public:
             T_last = menu_handler.insert( T_entry, s.str(),
                 boost::bind(boost::mem_fn(&Marker6DoFs::MinJerkMenuCallBack),
                             this, _1));
+            insert_counter++;
             menu_handler.setCheckState( T_last, interactive_markers::MenuHandler::UNCHECKED );
         }
 
         //#2 Arc
         circual_entry = menu_handler.insert("SemiCircular");
+        insert_counter++;
         reverse_entry = menu_handler.insert(circual_entry, "Reverse",
             boost::bind(boost::mem_fn(&Marker6DoFs::ReverseMenuCallBack),this, _1));
+        insert_counter++;
         reverse = 1;
         menu_handler.setCheckState(reverse_entry, interactive_markers::MenuHandler::UNCHECKED);
         circularXY_entry = menu_handler.insert(circual_entry, "XY in T [sec]");
+        insert_counter++;
+        offset_menu_entry_semicircular_XY = insert_counter++;
         for ( int i=0; i<SECS; i++ )
         {
             std::ostringstream s;
@@ -133,9 +148,12 @@ public:
             T_XY_entry = menu_handler.insert( circularXY_entry, s.str(),
                 boost::bind(boost::mem_fn(&Marker6DoFs::CircularXYMenuCallBack),
                             this, _1));
+            insert_counter++;
             menu_handler.setCheckState( T_XY_entry, interactive_markers::MenuHandler::UNCHECKED );
         }
         circularYZ_entry = menu_handler.insert(circual_entry, "YZ in T [sec]");
+        insert_counter++;
+        offset_menu_entry_semicircular_YZ = insert_counter;
         for ( int i=0; i<SECS; i++ )
         {
             std::ostringstream s;
@@ -143,9 +161,12 @@ public:
             T_YZ_entry = menu_handler.insert( circularYZ_entry, s.str(),
                 boost::bind(boost::mem_fn(&Marker6DoFs::CircularYZMenuCallBack),
                             this, _1));
+            insert_counter++;
             menu_handler.setCheckState( T_YZ_entry, interactive_markers::MenuHandler::UNCHECKED );
         }
         circularXZ_entry = menu_handler.insert(circual_entry, "XZ in T [sec]");
+        insert_counter++;
+        offset_menu_entry_semicircular_XZ = insert_counter;
         for ( int i=0; i<SECS; i++ )
         {
             std::ostringstream s;
@@ -153,30 +174,39 @@ public:
             T_XZ_entry = menu_handler.insert( circularXZ_entry, s.str(),
                 boost::bind(boost::mem_fn(&Marker6DoFs::CircularXZMenuCallBack),
                             this, _1));
+            insert_counter++;
             menu_handler.setCheckState( T_XZ_entry, interactive_markers::MenuHandler::UNCHECKED );
         }
 
         //#3 ResetMarker
         reset_marker_entry = menu_handler.insert("Reset Marker Pose",
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetMarkerCb), this, _1));
+        insert_counter++;
         menu_handler.setCheckState(reset_marker_entry, interactive_markers::MenuHandler::UNCHECKED);
 
 
         //#4 ResetTrj
         reset_trj_entry = menu_handler.insert("Reset Trajectory");
+        insert_counter++;
         reset_last_entry = menu_handler.insert(reset_trj_entry, "Last",
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetLastTrjCb), this, _1));
+        insert_counter++;
         menu_handler.setCheckState(reset_last_entry, interactive_markers::MenuHandler::UNCHECKED);
         reset_all_entry = menu_handler.insert(reset_trj_entry, "All",
             boost::bind(boost::mem_fn(&Marker6DoFs::ResetTrjCb), this, _1));
+        insert_counter++;
         menu_handler.setCheckState(reset_all_entry, interactive_markers::MenuHandler::UNCHECKED);
 
         //#5 Goal
         goal_entry = menu_handler.insert("Goal");
+        insert_counter++;
         remove_goal_entry = menu_handler.insert(goal_entry, "Remove Goal",
             boost::bind(boost::mem_fn(&Marker6DoFs::RemoveGoalCb), this, _1));
+        insert_counter++;
         menu_handler.setCheckState(remove_goal_entry, interactive_markers::MenuHandler::UNCHECKED);
         move_to_goal_entry = menu_handler.insert(goal_entry, "Move to Goal in T [sec]");
+        insert_counter++;
+        offset_menu_entry_goal_min_jerk = insert_counter;
         for ( int i=0; i<SECS; i++ )
         {
             std::ostringstream s;
@@ -184,6 +214,7 @@ public:
             goal_T_last = menu_handler.insert( move_to_goal_entry, s.str(),
                 boost::bind(boost::mem_fn(&Marker6DoFs::MinJerkToGoalMenuCallBack),
                             this, _1));
+            insert_counter++;
             menu_handler.setCheckState( goal_T_last, interactive_markers::MenuHandler::UNCHECKED );
         }
 
@@ -400,8 +431,7 @@ public:
         {
             KDL::Vector n(0,0,1);
             segment_trj seg = semiCircularTrj(n);
-
-            seg.T = feedback->menu_entry_id-2;
+            seg.T = double(feedback->menu_entry_id-offset_menu_entry_semicircular_XY);
             segments_trj.push_back(seg);
             start_pose = actual_pose;
         }
@@ -417,8 +447,7 @@ public:
         {
             KDL::Vector n(0,1,0);
             segment_trj seg = semiCircularTrj(n);
-
-            seg.T = feedback->menu_entry_id-2;
+            seg.T = double(feedback->menu_entry_id-offset_menu_entry_semicircular_XZ);
             segments_trj.push_back(seg);
             start_pose = actual_pose;
         }
@@ -434,8 +463,7 @@ public:
         {
             KDL::Vector n(1,0,0);
             segment_trj seg = semiCircularTrj(n);
-
-            seg.T = feedback->menu_entry_id-2;
+            seg.T = double(feedback->menu_entry_id-offset_menu_entry_semicircular_YZ);
             segments_trj.push_back(seg);
             start_pose = actual_pose;
         }
@@ -447,7 +475,7 @@ public:
         if(_goal_pose)
         {
             int trj_type = trj_designer::trj_type::MIN_JERK;
-            double T = feedback->menu_entry_id-2;
+            double T = double(feedback->menu_entry_id-offset_menu_entry_goal_min_jerk);
 
 //            ROS_WARN("REQUEST:");
 //            ROS_WARN("  Trj Type: %s", trj_type.c_str());
@@ -482,7 +510,7 @@ public:
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
         int trj_type = trj_designer::trj_type::MIN_JERK;
-        double T = feedback->menu_entry_id-2;
+        double T = double(feedback->menu_entry_id-offset_menu_entry_min_jerk);
 
 //        ROS_WARN("REQUEST:");
 //        ROS_WARN("  Trj Type: %s", trj_type.c_str());
@@ -694,6 +722,12 @@ private:
     interactive_markers::MenuHandler::EntryHandle T_XZ_entry;
     interactive_markers::MenuHandler::EntryHandle T_YZ_entry;
     int reverse;
+
+    int offset_menu_entry_min_jerk;
+    int offset_menu_entry_goal_min_jerk;
+    int offset_menu_entry_semicircular_XY;
+    int offset_menu_entry_semicircular_XZ;
+    int offset_menu_entry_semicircular_YZ;
 
 };
 
