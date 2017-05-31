@@ -74,6 +74,8 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
         solve = true;
     }
+
+    return true;
 }
 
 void left_cb(const nav_msgs::Path::ConstPtr& msg)

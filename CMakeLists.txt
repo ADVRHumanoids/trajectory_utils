@@ -89,12 +89,20 @@ endif()
         add_message_files(DIRECTORY msg FILES
               Cartesian.msg
               CartesianTrj.msg
+              segment.msg
+              segmentTrj.msg
               )
 
         ## Generate added messages and services with any dependencies listed here
         generate_messages(DEPENDENCIES
               geometry_msgs
               std_msgs
+              )
+
+       catkin_package(
+              INCLUDE_DIRS include
+              CATKIN_DEPENDS message_runtime geometry_msgs std_msgs
+              DEPENDS system_lib
               )
 
 

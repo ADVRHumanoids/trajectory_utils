@@ -9,8 +9,9 @@
 #include <trajectory_utils/utils/ros_trj_publisher.h>
 #include <urdf/model.h>
 #include <geometry_msgs/Pose.h>
-#include <trajectory_utils/CartesianTrj.h>
 #include <std_srvs/Empty.h>
+#include <trajectory_utils/CartesianTrj.h>
+#include <trajectory_utils/segmentTrj.h>
 
 #define SECS 5
 
@@ -703,17 +704,22 @@ public:
     {
         _service = n.advertiseService("/"+_trj.getDistalLink()+"_getTrj", &trjBroadcaster::service_cb, this);
         _pub = n.advertise<trajectory_utils::CartesianTrj>("/"+_trj.getDistalLink()+"_trj", 1000);
+        _pub2 = n.advertise<trajectory_utils::segmentTrj>("/"+_trj.getDistalLink()+"_segments", 1000);
     }
 
     bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
         std::vector<segment_trj> segments =  _trj.getTrajSegments();
+
+        setSegments(segments);
+
         _trj_gen.reset(new trajectory_utils::trajectory_generator(
                            _trj.getTime(),
                            _trj.getBaseLink(), _trj.getDistalLink()));
         for(unsigned int i = 0; i < segments.size(); ++i)
         {
             segment_trj trj = segments[i];
+
             if(trj.type == trj_designer::trj_type::MIN_JERK){
                 _trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
             }
@@ -726,11 +732,70 @@ public:
         setTrj();
 
         _pub.publish(_msg);
+        _pub2.publish(_msg2);
+
+        return true;
+    }
+
+    void setSegments(std::vector<segment_trj>& segments)
+    {
+        double qx,qy,qz,qw;
+        for(unsigned int i = 0; i < segments.size(); ++i)
+        {
+            segment_trj seg = segments[i];
+
+            trajectory_utils::segment seg_msg;
+            //Type
+            seg_msg.type.data = seg.type;
+            //T
+            seg_msg.T.data = seg.T;
+            //Start
+            seg_msg.start.frame.pose.position.x = seg.start.p.x();
+            seg_msg.start.frame.pose.position.y = seg.start.p.y();
+            seg_msg.start.frame.pose.position.z = seg.start.p.z();
+            seg.start.M.GetQuaternion(qx,qy,qz,qw);
+            seg_msg.start.frame.pose.orientation.x = qx;
+            seg_msg.start.frame.pose.orientation.y = qy;
+            seg_msg.start.frame.pose.orientation.z = qz;
+            seg_msg.start.frame.pose.orientation.w = qw;
+            seg_msg.start.frame.header.frame_id = _trj.getBaseLink();
+            seg_msg.start.distal_frame = _trj.getDistalLink();
+            //End
+            seg_msg.end.frame.pose.position.x = seg.end.p.x();
+            seg_msg.end.frame.pose.position.y = seg.end.p.y();
+            seg_msg.end.frame.pose.position.z = seg.end.p.z();
+            seg.end.M.GetQuaternion(qx,qy,qz,qw);
+            seg_msg.end.frame.pose.orientation.x = qx;
+            seg_msg.end.frame.pose.orientation.y = qy;
+            seg_msg.end.frame.pose.orientation.z = qz;
+            seg_msg.end.frame.pose.orientation.w = qw;
+            seg_msg.end.frame.header.frame_id = _trj.getBaseLink();
+            seg_msg.end.distal_frame = _trj.getDistalLink();
+
+            if(seg.type == trj_designer::trj_type::SEMI_CIRCLE)
+            {
+                //end_rot
+                seg_msg.end_rot = seg_msg.end.frame.pose.orientation;
+                //angle_rot;
+                seg_msg.angle_rot.data = seg.angle_rot;
+                //circle_center;
+                seg_msg.circle_center.x = seg_msg.circle_center.x;
+                seg_msg.circle_center.y = seg_msg.circle_center.y;
+                seg_msg.circle_center.z = seg_msg.circle_center.z;
+                //plane_normal;
+                seg_msg.plane_normal.x = seg_msg.plane_normal.x;
+                seg_msg.plane_normal.y = seg_msg.plane_normal.y;
+                seg_msg.plane_normal.z = seg_msg.plane_normal.z;
+            }
+
+            _msg2.segments.push_back(seg_msg);
+        }
+        _msg2.header.stamp = ros::Time::now();
     }
 
     void setTrj()
     {
-        _msg.poses.clear();
+        _msg.frames.clear();
 
         trajectory_utils::Cartesian T;
         KDL::Frame F;
@@ -739,20 +804,20 @@ public:
 
         while (!_trj_gen->isFinished()) {
             F = _trj_gen->Pos();
-            T.desired_pose.pose.position.x = F.p.x();
-            T.desired_pose.pose.position.y = F.p.y();
-            T.desired_pose.pose.position.z = F.p.z();
+            T.frame.pose.position.x = F.p.x();
+            T.frame.pose.position.y = F.p.y();
+            T.frame.pose.position.z = F.p.z();
             F.M.GetQuaternion(qx,qy,qz,qw);
-            T.desired_pose.pose.orientation.x = qx;
-            T.desired_pose.pose.orientation.y = qy;
-            T.desired_pose.pose.orientation.z = qz;
-            T.desired_pose.pose.orientation.w = qw;
+            T.frame.pose.orientation.x = qx;
+            T.frame.pose.orientation.y = qy;
+            T.frame.pose.orientation.z = qz;
+            T.frame.pose.orientation.w = qw;
 
-            T.desired_pose.header.frame_id = _trj.getBaseLink();
+            T.frame.header.frame_id = _trj.getBaseLink();
 
             T.distal_frame = _trj.getDistalLink();
 
-            _msg.poses.push_back(T);
+            _msg.frames.push_back(T);
 
             _trj_gen->updateTrj();
         }
@@ -764,8 +829,10 @@ private:
     Marker6DoFs& _trj;
     trajectory_utils::CartesianTrj _msg;
     ros::Publisher _pub;
+    ros::Publisher _pub2;
     ros::ServiceServer _service;
     boost::shared_ptr<trajectory_utils::trajectory_generator> _trj_gen;
+    trajectory_utils::segmentTrj _msg2;
 };
 
 }
