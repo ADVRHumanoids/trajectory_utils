@@ -68,10 +68,12 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
                                                   auto_stack->getBounds(), 1e10));
 
-    left_counter = -1;
-    right_counter = -1;
+    if(left_arm_trj.poses.size() > 0 || right_arm_trj.poses.size() > 0){
+        left_counter = -1;
+        right_counter = -1;
 
-    solve = true;
+        solve = true;
+    }
 }
 
 void left_cb(const nav_msgs::Path::ConstPtr& msg)
@@ -165,7 +167,6 @@ int main(int argc, char *argv[])
         KDL::Frame r_goal; r_goal.Identity();
 
 
-
         if(solve)
         {
             if(left_arm_trj.poses.size() > 0){
@@ -190,6 +191,8 @@ int main(int argc, char *argv[])
                left_counter == left_arm_trj.poses.size()){
                 solve = false;
             }
+
+
 
         }
 

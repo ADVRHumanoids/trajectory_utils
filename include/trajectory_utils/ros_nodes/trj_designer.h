@@ -362,6 +362,25 @@ public:
         _server.applyChanges();
     }
 
+    segment_trj semiCircularTrj(const KDL::Vector& plane_normal)
+    {
+        KDL::Frame dist = start_pose.Inverse()*actual_pose;
+
+        segment_trj seg;
+        seg.start = start_pose;
+        KDL::Vector n = start_pose.M*plane_normal;
+        n=reverse*n;
+        seg.plane_normal = n;
+        seg.circle_center = start_pose.p + start_pose.M*(dist.p)/2.;
+        seg.angle_rot = M_PI;
+        seg.end_rot = actual_pose.M;
+        seg.end = actual_pose;
+
+        seg.type = "SEMI_CIRCLE";
+
+        return seg;
+    }
+
     void CircularXYMenuCallBack(
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
@@ -370,25 +389,11 @@ public:
             ROS_ERROR("Target frame is not in XY plane!");
         else
         {
-            segment_trj seg;
+            KDL::Vector n(0,0,1);
+            segment_trj seg = semiCircularTrj(n);
 
-            seg.start = start_pose;
-
-            KDL::Vector n(0,0,1); n = start_pose.M*n; n=reverse*n;
-            seg.plane_normal = n;
-
-            seg.circle_center = start_pose.p + start_pose.M*(dist.p)/2.;
-            seg.angle_rot = M_PI;
-
-            seg.end_rot = actual_pose.M;
-            seg.end = actual_pose;
-
-            seg.type = "SEMI_CIRCLE";
             seg.T = feedback->menu_entry_id-2;
-
             segments_trj.push_back(seg);
-
-            //start_pose = actual_pose;
             start_pose = actual_pose;
         }
     }
@@ -397,12 +402,16 @@ public:
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
         KDL::Frame dist = start_pose.Inverse()*actual_pose;
-        ROS_WARN("dist.p.y: %f", std::fabs(dist.p.y()));
         if(std::fabs(dist.p.y()) > 1e-4)
             ROS_ERROR("Target frame is not in XZ plane!");
         else
         {
+            KDL::Vector n(0,1,0);
+            segment_trj seg = semiCircularTrj(n);
 
+            seg.T = feedback->menu_entry_id-2;
+            segments_trj.push_back(seg);
+            start_pose = actual_pose;
         }
     }
 
@@ -410,12 +419,16 @@ public:
             const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
     {
         KDL::Frame dist = start_pose.Inverse()*actual_pose;
-        ROS_WARN("dist.p.x: %f", std::fabs(dist.p.x()));
         if(std::fabs(dist.p.x()) > 1e-4)
             ROS_ERROR("Target frame is not in YZ plane!");
         else
         {
+            KDL::Vector n(1,0,0);
+            segment_trj seg = semiCircularTrj(n);
 
+            seg.T = feedback->menu_entry_id-2;
+            segments_trj.push_back(seg);
+            start_pose = actual_pose;
         }
     }
 
