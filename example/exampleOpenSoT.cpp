@@ -68,10 +68,12 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
                                                   auto_stack->getBounds(), 1e10));
 
-    if(left_arm_trj.poses.size() > 0 || right_arm_trj.poses.size() > 0){
+    if(left_arm_trj.poses.size() > 0){
         left_counter = -1;
+        solve = true;
+    }
+    if(right_arm_trj.poses.size() > 0){
         right_counter = -1;
-
         solve = true;
     }
 
@@ -190,7 +192,11 @@ int main(int argc, char *argv[])
             }
 
             if(right_counter == right_arm_trj.poses.size() &&
-               left_counter == left_arm_trj.poses.size()){
+               left_counter == left_arm_trj.poses.size() ||
+               right_counter == right_arm_trj.poses.size() &&
+               left_counter == -1 ||
+               left_counter == left_arm_trj.poses.size() &&
+               right_counter == -1 ){
                 solve = false;
             }
 
