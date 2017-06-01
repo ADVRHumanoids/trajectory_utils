@@ -45,12 +45,12 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
 
-    left_arm->setOrientationErrorGain(0.1);
+    left_arm->setOrientationErrorGain(1.0);
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
 
-    right_arm->setOrientationErrorGain(0.1);
+    right_arm->setOrientationErrorGain(1.0);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
 
 

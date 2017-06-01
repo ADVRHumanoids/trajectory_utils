@@ -42,14 +42,14 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
-find_package(srdfdom_advr REQUIRED)
-find_package(iDynTree REQUIRED)
-find_package(OpenSoT REQUIRED)
-FIND_PACKAGE(XBotInterface REQUIRED)
-find_package(ModelInterfaceIDYNUTILS REQUIRED)
-FIND_PACKAGE(conversion_utils_YARP REQUIRED)
-FIND_PACKAGE(idynutils2 REQUIRED)
-#FIND_PACKAGE(idynutils2 REQUIRED)
+find_package(srdfdom_advr QUIET)
+find_package(iDynTree QUIET)
+find_package(OpenSoT QUIET)
+FIND_PACKAGE(XBotInterface QUIET)
+find_package(ModelInterfaceIDYNUTILS QUIET)
+FIND_PACKAGE(conversion_utils_YARP QUIET)
+FIND_PACKAGE(idynutils2 QUIET)
+
 
 # compilation flags
 option(TRAJECTORY_UTILS_COMPILE_EXAMPLES "Compile trajectory_utils examples" FALSE)
