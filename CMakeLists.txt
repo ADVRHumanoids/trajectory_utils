@@ -42,6 +42,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+
 find_package(srdfdom_advr QUIET)
 find_package(iDynTree QUIET)
 find_package(OpenSoT QUIET)
@@ -54,6 +55,7 @@ FIND_PACKAGE(idynutils2 QUIET)
 # compilation flags
 option(TRAJECTORY_UTILS_COMPILE_EXAMPLES "Compile trajectory_utils examples" FALSE)
 option(TRAJECTORY_UTILS_COMPILE_TESTS "Compile trajectory_utils tests" FALSE)
+option(TRAJECTORY_UTILS_COMPILE_TRJ_DESIG "Compile trajectory_designer" FALSE)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -86,24 +88,24 @@ if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools
 endif()
 
 
-        add_message_files(DIRECTORY msg FILES
-              Cartesian.msg
-              CartesianTrj.msg
-              segment.msg
-              segmentTrj.msg
-              )
+add_message_files(DIRECTORY msg FILES
+      Cartesian.msg
+      CartesianTrj.msg
+      segment.msg
+      segmentTrj.msg
+          )
 
         ## Generate added messages and services with any dependencies listed here
-        generate_messages(DEPENDENCIES
-              geometry_msgs
-              std_msgs
-              )
+generate_messages(DEPENDENCIES
+      geometry_msgs
+      std_msgs
+          )
 
-       catkin_package(
-              INCLUDE_DIRS include
-              CATKIN_DEPENDS message_runtime geometry_msgs std_msgs
-              DEPENDS system_lib
-              )
+catkin_package(
+      INCLUDE_DIRS include
+      CATKIN_DEPENDS message_runtime geometry_msgs std_msgs
+      DEPENDS system_lib
+          )
 
 
 
@@ -142,6 +144,7 @@ if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
     endif()
 endif()
 
+if(${TRAJECTORY_UTILS_COMPILE_TRJ_DESIG})
 if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
     if(${interactive_markers_FOUND} AND ${catkin_FOUND})
         ADD_EXECUTABLE(trajectory_designer src/ros_nodes/trj_designer.cpp)
@@ -162,6 +165,7 @@ if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools
               RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
               )
     endif()
+endif()
 endif()
 ########################################################################
 # use YCM to export idynutils so that it can be found using find_package #
