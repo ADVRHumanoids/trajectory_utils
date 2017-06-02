@@ -12,8 +12,22 @@ The Cartesian trajectories available at the moment are:
 - Minimum Jerk
 - Semicircular in along the local planes XY, YZ and XZ
 
-### Subscribed Topic:
-```_distal_link_goal```([geometry_msgs::Pose](http://docs.ros.org/api/geometry_msgs/html/msg/Pose.html)): Set a goal from outside
+#### Subscribed Topics:
+```distal_link_goal```([geometry_msgs::Pose](http://docs.ros.org/api/geometry_msgs/html/msg/Pose.html)): set a goal from outside
 
-### Published Topic:
+#### Published Topics:
+```distal_link_segments```(trajectory_utils/segmentTrj): store the data of each trajectory segment
 
+```distal_link_trj```(trajectory_utils/CartesianTrj): store the complete trajectory
+
+```distal_link_trj_viz```([nav_msgs/Path](http://docs.ros.org/api/nav_msgs/html/msg/Path.html)): used for visualization purposes
+
+#### Services:
+```distal_link_getTrj```([std_srvs/Empty](http://docs.ros.org/api/std_srvs/html/srv/Empty.html)): request publication of actual trajectory and segments
+
+#### Parameters:
+```~base_link```(```string```): frame in which the ```distal_frame``` is controlled
+
+```~distal_link```(```string```): controlled frame
+
+```~dT```(```double```): trajectory sample
