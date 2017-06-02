@@ -6,6 +6,7 @@ The repo contains also the ROS node ```trajectory_designed```.
 trajectory_designer
 -------------------
 ```trajectory_designed``` is a ROS node which aim is to provide a simple tool to fast sketch Cartesian trajectories using ```interactive_markers``` in RVIZ:
+
 [![trajectory_designer](https://img.youtube.com/vi/HPBwuupm1Fo/0.jpg)](https://www.youtube.com/watch?v=HPBwuupm1Fo)
 
 The Cartesian trajectories available at the moment are:
@@ -31,3 +32,12 @@ The Cartesian trajectories available at the moment are:
 ```~distal_link```(```string```): controlled frame
 
 ```~dT```(```double```): trajectory sample
+
+#### Messages:
+[```Cartesian```](https://github.com/ADVRHumanoids/trajectory_utils/blob/master/msg/Cartesian.msg)
+
+[```CartesianTrj```](https://github.com/ADVRHumanoids/trajectory_utils/blob/master/msg/CartesianTrj.msg)
+
+[```segment```](https://github.com/ADVRHumanoids/trajectory_utils/blob/master/msg/segment.msg)
+
+[```segmentTrj```](https://github.com/ADVRHumanoids/trajectory_utils/blob/master/msg/segmentTrj.msg)
