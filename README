@@ -1,3 +1,0 @@
-trajectory_utils
-----------------
-The purpose of this library is to have a wrapper around the KDL::Trajectories in order to simplify the usage and the interface.
