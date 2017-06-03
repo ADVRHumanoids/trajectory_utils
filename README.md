@@ -33,7 +33,7 @@ The Cartesian trajectories available at the moment are:
 
 ```~dT```(```double```): trajectory sample
 
-#### Required tf Transforms
+#### Required tf Transforms:
 ```\base_link``` -> ```\distal_link``` usually given by the [```robot_state_publisher```](http://wiki.ros.org/robot_state_publisher) node
 
 #### Messages:
