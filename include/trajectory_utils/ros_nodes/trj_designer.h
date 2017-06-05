@@ -834,11 +834,18 @@ public:
 
         trajectory_utils::Cartesian T;
         KDL::Frame F;
+        geometry_msgs::Twist twist;
+        KDL::Twist v;
+        geometry_msgs::Accel acc;
+        KDL::Twist a;
         double qx,qy,qz,qw;
 
 
         while (!_trj_gen->isFinished()) {
             F = _trj_gen->Pos();
+            v = _trj_gen->Vel();
+            a = _trj_gen->Acc();
+
             T.frame.pose.position.x = F.p.x();
             T.frame.pose.position.y = F.p.y();
             T.frame.pose.position.z = F.p.z();
@@ -853,6 +860,24 @@ public:
             T.distal_frame = _trj.getDistalLink();
 
             _msg.frames.push_back(T);
+
+            twist.linear.x = v.vel.x();
+            twist.linear.y = v.vel.y();
+            twist.linear.z = v.vel.z();
+            twist.angular.x = v.rot.x();
+            twist.angular.y = v.rot.y();
+            twist.angular.z = v.rot.z();
+
+            _msg.twists.push_back(twist);
+
+            acc.linear.x = a.vel.x();
+            acc.linear.y = a.vel.y();
+            acc.linear.z = a.vel.z();
+            acc.angular.x = a.rot.x();
+            acc.angular.y = a.rot.y();
+            acc.angular.z = a.rot.z();
+
+            _msg.accelerations.push_back(acc);
 
             _trj_gen->updateTrj();
         }
