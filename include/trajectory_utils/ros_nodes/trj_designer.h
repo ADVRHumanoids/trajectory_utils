@@ -65,7 +65,7 @@ public:
 
         trj_pub.reset(new trajectory_utils::trajectory_publisher(_distal_link+"_trj_viz"));
 
-        _goal_sub = n.subscribe(_distal_link+"_goal", 1000, &Marker6DoFs::GoalCallBack, this);
+        _goal_sub = n.subscribe("/"+_distal_link+"_goal", 1000, &Marker6DoFs::GoalCallBack, this);
     }
 
 
@@ -855,7 +855,6 @@ public:
             T.frame.pose.orientation.w = qw;
 
             T.frame.header.frame_id = _trj.getBaseLink();
-            T.frame.header.stamp = _trj_gen->getTime();
 
             T.distal_frame = _trj.getDistalLink();
 
@@ -884,6 +883,7 @@ public:
         }
 
         _msg.header.stamp = ros::Time::now();
+        _msg.dT = _trj_gen->getSampleTime();
     }
 
 private:

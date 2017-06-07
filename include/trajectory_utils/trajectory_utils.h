@@ -71,6 +71,14 @@ public:
     }
 
     /**
+     * @brief getSampleTime
+     * @return sample time of the trajectory
+     */
+    double getSampleTime(){
+        return _dt;
+    }
+
+    /**
      * @brief changeBaseFrame
      * @param base_frame
      */
