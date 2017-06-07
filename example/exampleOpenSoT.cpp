@@ -7,17 +7,19 @@
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
-#include <nav_msgs/Path.h>
+#include <trajectory_utils/CartesianTrj.h>
+#include <sensor_msgs/JointState.h>
 #include <kdl_conversions/kdl_msg.h>
 #include <std_srvs/Empty.h>
 
 static void null_deleter(idynutils2 *) {}
 
-nav_msgs::Path left_arm_trj;
-nav_msgs::Path right_arm_trj;
+trajectory_utils::CartesianTrj left_arm_trj;
+trajectory_utils::CartesianTrj right_arm_trj;
 
 OpenSoT::AutoStack::Ptr auto_stack;
 Eigen::VectorXd q;
+std::vector<Eigen::VectorXd> qd;
 Eigen::VectorXd q0;
 boost::shared_ptr<idynutils2> robot;
 OpenSoT::solvers::QPOases_sot::Ptr solver;
@@ -29,9 +31,12 @@ OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
 OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
 std::string left_arm_distal_link, left_arm_base_link;
 std::string right_arm_distal_link, right_arm_base_link;
+ros::Publisher joint_desired_pub;
 
 int left_counter = -1;
 int right_counter = -1;
+
+double dT;
 
 bool solve = false;
 
@@ -68,24 +73,26 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
                                                   auto_stack->getBounds(), 1e10));
 
-    if(left_arm_trj.poses.size() > 0){
+    if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
         solve = true;
     }
-    if(right_arm_trj.poses.size() > 0){
+    if(right_arm_trj.frames.size() > 0){
         right_counter = -1;
         solve = true;
     }
 
+    qd.clear();
+    qd.push_back(q);
     return true;
 }
 
-void left_cb(const nav_msgs::Path::ConstPtr& msg)
+void left_cb(const trajectory_utils::CartesianTrj::ConstPtr& msg)
 {
   left_arm_trj = *(msg.get());
 }
 
-void right_cb(const nav_msgs::Path::ConstPtr& msg)
+void right_cb(const trajectory_utils::CartesianTrj::ConstPtr& msg)
 {
   right_arm_trj = *(msg.get());
 }
@@ -104,6 +111,18 @@ void publishJointState(const Eigen::VectorXd& q, const XBot::ModelInterfaceIDYNU
     joints_state_msg.header.stamp = ros::Time::now();
 
     joint_pub.publish(joints_state_msg);
+}
+
+bool service_cb2(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    if(qd.size() > 0)
+    {
+        for(unsigned int i = 0; i < qd.size(); ++i)
+        {
+            publishJointState(q, model_ptr, joint_desired_pub);
+            ros::Duration(dT).sleep();
+        }
+    }
 }
 
 int main(int argc, char *argv[])
@@ -131,6 +150,8 @@ int main(int argc, char *argv[])
     nh.getParam("right_arm_base_link", right_arm_base_link);
     ROS_INFO("right_arm_base_link: %s", right_arm_base_link.c_str());
 
+    nh.getParam("dT", dT);
+    ROS_INFO("dT is : %f [sec]", dT);
 
 
     robot.reset( new idynutils2("robot", urdf_path, srdf_path));
@@ -152,15 +173,18 @@ int main(int argc, char *argv[])
         }
     }
     q = q0;
+    qd.push_back(q);
 
     robot->updateiDynTreeModel(q, true);
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
+    joint_desired_pub = nh.advertise<sensor_msgs::JointState>("/joint_desired", 1000);
 
 
-    ros::Subscriber sub_left_arm =  nh.subscribe("/"+left_arm_distal_link+"_trj_viz", 1000, left_cb);
-    ros::Subscriber sub_right_arm = nh.subscribe("/"+right_arm_distal_link+"_trj_viz", 1000, right_cb);
+    ros::Subscriber sub_left_arm =  nh.subscribe("/"+left_arm_distal_link+"_trj", 1000, left_cb);
+    ros::Subscriber sub_right_arm = nh.subscribe("/"+right_arm_distal_link+"_trj", 1000, right_cb);
     ros::ServiceServer service = nh.advertiseService("/IK", service_cb);
+    ros::ServiceServer service2 = nh.advertiseService("/publish_joint_desired", service_cb2);
 
 
     Eigen::VectorXd dq(q.size()); dq.setZero(dq.size());
@@ -170,32 +194,31 @@ int main(int argc, char *argv[])
         KDL::Frame l_goal; l_goal.Identity();
         KDL::Frame r_goal; r_goal.Identity();
 
-
         if(solve)
         {
-            if(left_arm_trj.poses.size() > 0){
+            if(left_arm_trj.frames.size() > 0){
                 left_counter++;
-                if(left_counter < left_arm_trj.poses.size()){
-                    geometry_msgs::PoseStamped p = left_arm_trj.poses[left_counter];
+                if(left_counter < left_arm_trj.frames.size()){
+                    geometry_msgs::PoseStamped p = left_arm_trj.frames[left_counter].frame;
                     tf::PoseMsgToKDL(p.pose, l_goal);
                     left_arm->setReference(l_goal);
                 }
             }
 
-            if(right_arm_trj.poses.size() > 0){
+            if(right_arm_trj.frames.size() > 0){
                 right_counter++;
-                if(right_counter < right_arm_trj.poses.size()){
-                    geometry_msgs::PoseStamped p = right_arm_trj.poses[right_counter];
+                if(right_counter < right_arm_trj.frames.size()){
+                    geometry_msgs::PoseStamped p = right_arm_trj.frames[right_counter].frame;
                     tf::PoseMsgToKDL(p.pose, r_goal);
                     right_arm->setReference(r_goal);
                 }
             }
 
-            if(right_counter == right_arm_trj.poses.size() &&
-               left_counter == left_arm_trj.poses.size() ||
-               right_counter == right_arm_trj.poses.size() &&
+            if(right_counter == right_arm_trj.frames.size() &&
+               left_counter == left_arm_trj.frames.size() ||
+               right_counter == right_arm_trj.frames.size() &&
                left_counter == -1 ||
-               left_counter == left_arm_trj.poses.size() &&
+               left_counter == left_arm_trj.frames.size() &&
                right_counter == -1 ){
                 solve = false;
             }
@@ -209,8 +232,9 @@ int main(int argc, char *argv[])
 
             auto_stack->update(q);
 
-            if(solver->solve(dq))
+            if(solver->solve(dq)){
                 q+=dq;
+                qd.push_back(q);}
             else
                 ROS_ERROR("Solver error!!!");
         }
@@ -218,7 +242,7 @@ int main(int argc, char *argv[])
         publishJointState(q, model_ptr, joint_pub);
         ros::spinOnce();
 
-        usleep(100000);
+        ros::Duration(dT).sleep();
     }
 
 }

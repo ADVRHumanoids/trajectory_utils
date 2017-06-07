@@ -14,6 +14,7 @@
 <!-- arg name="left_arm_distal_link" value="LElb" /-->
 <arg name="right_arm_distal_link" value="RSoftHandLink" />
 <arg name="left_arm_distal_link" value="LSoftHandLink" />
+<arg name="dT" value="0.01" />
 
 
 <!-- IK node -->
@@ -25,6 +26,7 @@
  <param name="left_arm_base_link"   value="$(arg base_link)" /> 
  <param name="right_arm_distal_link"   value="$(arg right_arm_distal_link)" />
  <param name="right_arm_base_link"   value="$(arg base_link)" />
+ <param name="dT"   value="$(arg dT)" />
  <rosparam param="initial_configuration">
        LShLat: 0.17453292519943295
        LElbj: -1.3962634015954636
@@ -37,13 +39,13 @@
 <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig1" output="screen">
   <param name="base_link" value="$(arg base_link)" />
   <param name="distal_link" value="$(arg left_arm_distal_link)" />
-  <param name="dT" value="0.01" />
+  <param name="dT"   value="$(arg dT)" />
 </node>
 
 <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig2" output="screen">
   <param name="base_link" value="$(arg base_link)" />
   <param name="distal_link" value="$(arg right_arm_distal_link)" />
-  <param name="dT" value="0.01" />
+  <param name="dT"   value="$(arg dT)" />
 </node>
 
 </launch>
