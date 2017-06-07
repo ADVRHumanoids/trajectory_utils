@@ -32,6 +32,7 @@ OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
 std::string left_arm_distal_link, left_arm_base_link;
 std::string right_arm_distal_link, right_arm_base_link;
 ros::Publisher joint_desired_pub;
+std::string tf_prefix;
 
 int left_counter = -1;
 int right_counter = -1;
@@ -64,7 +65,7 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->getJointLimits(qmin, qmax);
     joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
 
-    //vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, q.size()));
+    //vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(2.*M_PI, dT, q.size()));
 
     auto_stack = (left_arm + right_arm)/
                  (postural)<<joint_lims;//<<vel_lims;
@@ -153,7 +154,6 @@ int main(int argc, char *argv[])
     nh.getParam("dT", dT);
     ROS_INFO("dT is : %f [sec]", dT);
 
-
     robot.reset( new idynutils2("robot", urdf_path, srdf_path));
     model_ptr = std::dynamic_pointer_cast<XBot::ModelInterfaceIDYNUTILS>
             (XBot::ModelInterface::getModel(config_path));
@@ -163,11 +163,13 @@ int main(int argc, char *argv[])
 
     q0.resize(model_ptr->getJointNum()); q0.setZero(q0.size());
     std::map<std::string,double> joints_initial_value;
-    nh.getParam("initial_configuration", joints_initial_value);
+    nh.getParam("/zeros", joints_initial_value);
     if(joints_initial_value.size() > 0)
     {
+        ROS_INFO("zeros:");
         std::map<std::string, double>::iterator it = joints_initial_value.begin();
         while (it != joints_initial_value.end()) {
+            ROS_INFO("  %s --> %f", it->first.c_str(), it->second);
             q0[model_ptr->getDofIndex(it->first)] = it->second;
             it++;
         }
@@ -178,7 +180,7 @@ int main(int argc, char *argv[])
     robot->updateiDynTreeModel(q, true);
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
-    joint_desired_pub = nh.advertise<sensor_msgs::JointState>("/joint_desired", 1000);
+    joint_desired_pub = nh.advertise<sensor_msgs::JointState>("/joint_states_desired", 1000);
 
 
     ros::Subscriber sub_left_arm =  nh.subscribe("/"+left_arm_distal_link+"_trj", 1000, left_cb);

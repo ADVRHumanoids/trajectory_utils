@@ -1,0 +1,66 @@
+<launch>
+     <node name="pyros_topic_to_param" pkg="ros_orocos_joints_gui" type="pyros_topic_to_param.py" output="screen"/>
+
+     <arg name="gui" default="true" />
+
+     <!-- send the coman robot XML to param server -->
+     <param name="robot_description" command="$(find xacro)/xacro.py '$(find coman_urdf)/urdf/coman.urdf'" />
+     <param name="robot_description_semantic" textfile="$(find coman_srdf)/srdf/coman.srdf" />   
+     <param name="use_gui" value="$(arg gui)"/>
+     <param name="rate" value="50.0"/>
+     
+    <!-- start robot state publisher -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
+        <param name="publish_frequency" type="double" value="250.0" />
+        <param name="ignore_timestamp" type="bool" value="true" />
+    </node>
+
+    <!-- start robot previewer publisher -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_previewer" output="screen" >
+        <param name="publish_frequency" type="double" value="250.0" />
+        <param name="tf_prefix" type="string" value="previewer" />
+        <param name="ignore_timestamp" type="bool" value="true" />
+        <remap from="joint_states" to="previewer/joint_states"/>
+    </node> 
+
+    <!-- static transform between robot and previewer -->
+    <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 base_link previewer/base_link 250.0" />
+
+
+    <arg name="base_link" value="Waist" />
+    <arg name="right_arm_distal_link" value="RSoftHand" />
+    <arg name="left_arm_distal_link" value="LSoftHand" />
+    <arg name="dT" value="0.01" />
+
+    <!-- IK node -->
+    <node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
+      <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/external/OpenSoT/tests/configs/bigman/configs/config_bigman.yaml" />
+      <param name="urdf_path"   value="$(find bigman_urdf)/urdf/bigman.urdf" />
+      <param name="srdf_path"   value="$(find bigman_srdf)/srdf/bigman.srdf" />
+      <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />
+      <param name="left_arm_base_link"   value="$(arg base_link)" /> 
+      <param name="right_arm_distal_link"   value="$(arg right_arm_distal_link)" />
+      <param name="right_arm_base_link"   value="$(arg base_link)" />
+      <param name="dT"   value="$(arg dT)" />
+      <remap from="joint_states" to="previewer/joint_states"/>
+      <!--rosparam param="zeros">
+        LShLat: 0.17453292519943295
+        LElbj: -1.3962634015954636
+        RShLat: -0.17453292519943295
+        RElbj: -1.3962634015954636
+      </rosparam-->
+    </node>
+
+   <!-- Trajectory Designer nodes -->
+   <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig1" output="screen">
+     <param name="base_link" value="$(arg base_link)" />
+     <param name="distal_link" value="$(arg left_arm_distal_link)" />
+     <param name="dT"   value="$(arg dT)" />
+   </node>
+
+   <node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig2" output="screen">
+     <param name="base_link" value="$(arg base_link)" />
+     <param name="distal_link" value="$(arg right_arm_distal_link)" />
+     <param name="dT"   value="$(arg dT)" />
+   </node>
+</launch>

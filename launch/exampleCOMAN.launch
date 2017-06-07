@@ -25,7 +25,7 @@
  <param name="right_arm_distal_link"   value="$(arg right_arm_distal_link)" />
  <param name="right_arm_base_link"   value="$(arg base_link)" />
  <param name="dT"   value="$(arg dT)" />
- <rosparam param="initial_configuration">
+ <rosparam param="/zeros">
        LShSag: 0.3490658503988659
        LShLat: 0.17453292519943295
        LElbj: -1.3962634015954636
