@@ -840,7 +840,6 @@ public:
         KDL::Twist a;
         double qx,qy,qz,qw;
 
-
         while (!_trj_gen->isFinished()) {
             F = _trj_gen->Pos();
             v = _trj_gen->Vel();
@@ -856,10 +855,12 @@ public:
             T.frame.pose.orientation.w = qw;
 
             T.frame.header.frame_id = _trj.getBaseLink();
+            T.frame.header.stamp = _trj_gen->getTime();
 
             T.distal_frame = _trj.getDistalLink();
 
             _msg.frames.push_back(T);
+
 
             twist.linear.x = v.vel.x();
             twist.linear.y = v.vel.y();
