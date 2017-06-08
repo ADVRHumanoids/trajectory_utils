@@ -133,6 +133,24 @@ bool service_cb2(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     return true;
 }
 
+void resetTrj(trajectory_utils::CartesianTrj& trajectory_msg)
+{
+    trajectory_msg.frames.clear();
+    trajectory_msg.accelerations.clear();
+    trajectory_msg.twists.clear();
+    trajectory_msg.dT = 0.;
+}
+
+bool service_cb3(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    q0 = q;
+    resetTrj(left_arm_trj);
+    resetTrj(right_arm_trj);
+    return true;
+}
+
+
+
 int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "example_open_sot");
@@ -194,6 +212,7 @@ int main(int argc, char *argv[])
     ros::Subscriber sub_right_arm = nh.subscribe("/"+right_arm_distal_link+"_trj", 1000, right_cb);
     ros::ServiceServer service = nh.advertiseService("/IK", service_cb);
     ros::ServiceServer service2 = nh.advertiseService("/publish_joint_desired", service_cb2);
+    ros::ServiceServer service3 = nh.advertiseService("/reset", service_cb3);
 
 
     Eigen::VectorXd dq(q.size()); dq.setZero(dq.size());
@@ -231,8 +250,6 @@ int main(int argc, char *argv[])
                right_counter == -1 ){
                 solve = false;
             }
-
-
 
         }
 
