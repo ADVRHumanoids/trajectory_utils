@@ -56,6 +56,8 @@ public:
         initial_pose = start_pose;
         actual_pose = start_pose;
 
+        printPose("initial_pose_"+_distal_link, initial_pose);
+
         MakeMarker(distal_link, base_link, false,
                    visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,
                    true);
@@ -66,6 +68,15 @@ public:
         trj_pub.reset(new trajectory_utils::trajectory_publisher(_distal_link+"_trj_viz"));
 
         _goal_sub = n.subscribe("/"+_distal_link+"_goal", 1000, &Marker6DoFs::GoalCallBack, this);
+    }
+
+    static void printPose(const std::string& frame_name, const KDL::Frame& pose)
+    {
+        double qx,qy,qz,qw;
+        pose.M.GetQuaternion(qx, qy, qz, qw);
+        ROS_INFO("%s pose:", frame_name.c_str());
+        ROS_INFO(" position [%f, %f, %f]", pose.p.x(), pose.p.y(), pose.p.z());
+        ROS_INFO(" orientation [%f, %f, %f, %f]", qx, qy, qz, qw);
     }
 
 
@@ -217,6 +228,12 @@ public:
             insert_counter++;
             menu_handler.setCheckState( goal_T_last, interactive_markers::MenuHandler::UNCHECKED );
         }
+
+        //#6 RestartMarker
+        restart_marker_entry = menu_handler.insert("Restart Marker",
+            boost::bind(boost::mem_fn(&Marker6DoFs::RestartCb), this, _1));
+        insert_counter++;
+        menu_handler.setCheckState(restart_marker_entry, interactive_markers::MenuHandler::UNCHECKED);
 
 
         menu_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
@@ -512,20 +529,13 @@ public:
         int trj_type = trj_designer::trj_type::MIN_JERK;
         double T = double(feedback->menu_entry_id-offset_menu_entry_min_jerk);
 
-//        ROS_WARN("REQUEST:");
-//        ROS_WARN("  Trj Type: %s", trj_type.c_str());
-//        ROS_WARN("  base_link: %s", _base_link.c_str());
-//        ROS_WARN("  distal_link: %s", _distal_link.c_str());
-//        ROS_WARN("  Time [sec]: %f", T);
-//        double qx, qy, qz, qw;
-//        initial_pose.M.GetQuaternion(qx, qy, qz, qw);
-//        ROS_WARN("  START: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
-//                 initial_pose.p.x(), initial_pose.p.y(), initial_pose.p.z(),
-//                 qx, qy, qz, qw);
-//        actual_pose.M.GetQuaternion(qx, qy, qz, qw);
-//        ROS_WARN("  END: position [%f, %f, %f], orientation [%f, %f, %f, %f]",
-//                 actual_pose.p.x(), actual_pose.p.y(), actual_pose.p.z(),
-//                 qx, qy, qz, qw);
+        ROS_INFO("REQUEST:");
+        ROS_INFO("  Trj Type: %i", trj_type);
+        ROS_INFO("  base_link: %s", _base_link.c_str());
+        ROS_INFO("  distal_link: %s", _distal_link.c_str());
+        ROS_INFO("  Time [sec]: %f", T);
+        printPose("  START", initial_pose);
+        printPose("  END", actual_pose);
 
         segment_trj seg;
         seg.type = trj_type;
@@ -593,6 +603,26 @@ public:
         tf::poseKDLToMsg(last_pose_KDL, last_pose);
 
         _server.setPose(int_marker.name, last_pose);
+        _server.applyChanges();
+    }
+
+    void RestartCb(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        ROS_WARN("Restart");
+        KDL::Frame robot_pose_KDL = getRobotActualPose();
+        initial_pose = robot_pose_KDL;
+        start_pose = robot_pose_KDL;
+        actual_pose = robot_pose_KDL;
+        printPose("initial_pose_"+_distal_link, robot_pose_KDL);
+
+        segments_trj.clear();
+        trj_pub->deleteAllMarkersAndTrj();
+
+        geometry_msgs::Pose robot_pose;
+
+        tf::poseKDLToMsg(robot_pose_KDL, robot_pose);
+
+        _server.setPose(int_marker.name, robot_pose);
         _server.applyChanges();
     }
 
@@ -722,6 +752,8 @@ private:
     interactive_markers::MenuHandler::EntryHandle T_XZ_entry;
     interactive_markers::MenuHandler::EntryHandle T_YZ_entry;
     int reverse;
+
+    interactive_markers::MenuHandler::EntryHandle restart_marker_entry;
 
     int offset_menu_entry_min_jerk;
     int offset_menu_entry_goal_min_jerk;
