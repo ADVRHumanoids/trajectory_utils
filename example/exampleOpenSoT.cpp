@@ -11,6 +11,7 @@
 #include <sensor_msgs/JointState.h>
 #include <kdl_conversions/kdl_msg.h>
 #include <std_srvs/Empty.h>
+#include <trajectory_utils/ros_nodes/trj_designer.h>
 
 static void null_deleter(idynutils2 *) {}
 
@@ -34,6 +35,7 @@ std::string right_arm_distal_link, right_arm_base_link;
 ros::Publisher joint_desired_pub;
 std::string tf_prefix;
 
+
 int left_counter = -1;
 int right_counter = -1;
 
@@ -44,6 +46,7 @@ bool solve = false;
 bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
     q = q0;
+
     robot->updateiDynTreeModel(q, true);
 
 
@@ -55,6 +58,9 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
+    KDL::Frame F;
+    right_arm->getActualPose(F);
+    trj_designer::Marker6DoFs::printPose("right arm initial pose", F);
 
     right_arm->setOrientationErrorGain(1.0);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
@@ -120,10 +126,11 @@ bool service_cb2(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
         for(unsigned int i = 0; i < qd.size(); ++i)
         {
-            publishJointState(q, model_ptr, joint_desired_pub);
+            publishJointState(qd[i], model_ptr, joint_desired_pub);
             ros::Duration(dT).sleep();
         }
     }
+    return true;
 }
 
 int main(int argc, char *argv[])
