@@ -79,15 +79,17 @@ file(GLOB_RECURSE trajectory_utils_INCLUDES
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/utils" *.h*
 "${CMAKE_CURRENT_SOURCE_DIR}/include/trajectory_utils/ros_nodes" *.h*)
 
+message("trajectory_utils added to compilation...")
 set(TRAJECTORY_UTILS_SOURCES src/trajectory_utils.cpp
                              src/paths/path_circle_fix.cpp)
 
 if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
+    message("ros_trj_publisher added to compilation...")
     set(TRAJECTORY_UTILS_SOURCES ${TRAJECTORY_UTILS_SOURCES}
         src/utils/ros_trj_publisher.cpp)
 endif()
 
-
+message("ros messages added to compilation...")
 add_message_files(DIRECTORY msg FILES
       Cartesian.msg
       CartesianTrj.msg
@@ -117,12 +119,14 @@ ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
 
 if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
     if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
+        message("exampleTrjPublisher added to compilation...")
         ADD_EXECUTABLE(exampleTrjPublisher example/exampleTrjPublisher.cpp)
         TARGET_LINK_LIBRARIES(exampleTrjPublisher trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
         ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
     endif()
 
     if(${OpenSoT_FOUND} AND ${srdfdom_advr_FOUND} AND ${iDynTree_FOUND})
+        message("exampleOpenSoT added to compilation...")
         ADD_EXECUTABLE(exampleOpenSoT example/exampleOpenSoT.cpp)
         TARGET_LINK_LIBRARIES(exampleOpenSoT ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
         ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${OpenSoT_LIBRARIES} ${XBotInterface_LIBRARIES}
@@ -147,6 +151,7 @@ endif()
 if(${TRAJECTORY_UTILS_COMPILE_TRJ_DESIG})
 if(${tf_FOUND} AND ${nav_msgs_FOUND} AND ${roslib_FOUND} AND ${rviz_visual_tools_FOUND})
     if(${interactive_markers_FOUND} AND ${catkin_FOUND})
+        message("trajectory_designer added to compilation...")
         ADD_EXECUTABLE(trajectory_designer src/ros_nodes/trj_designer.cpp)
         TARGET_LINK_LIBRARIES(trajectory_designer trajectory_utils ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
             ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${interactive_markers_LIBRARIES})
