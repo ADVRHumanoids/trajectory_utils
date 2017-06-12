@@ -71,10 +71,10 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->getJointLimits(qmin, qmax);
     joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
 
-    //vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(2.*M_PI, dT, q.size()));
+    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
 
     auto_stack = (left_arm + right_arm)/
-                 (postural)<<joint_lims;//<<vel_lims;
+                 (postural)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
