@@ -12,6 +12,7 @@
 #include <kdl_conversions/kdl_msg.h>
 #include <std_srvs/Empty.h>
 #include <trajectory_utils/ros_nodes/trj_designer.h>
+#include <trajectory_msgs/JointTrajectory.h>
 
 static void null_deleter(idynutils2 *) {}
 
@@ -32,8 +33,10 @@ OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
 OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
 std::string left_arm_distal_link, left_arm_base_link;
 std::string right_arm_distal_link, right_arm_base_link;
-ros::Publisher joint_desired_pub;
+ros::Publisher joint_trajectory_desired_pub;
 std::string tf_prefix;
+
+
 
 
 int left_counter = -1;
@@ -122,13 +125,28 @@ void publishJointState(const Eigen::VectorXd& q, const XBot::ModelInterfaceIDYNU
 
 bool service_cb2(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
+    trajectory_msgs::JointTrajectory joint_trajectory_msg;
+
     if(qd.size() > 0)
     {
+        for(unsigned int i = 0; i < q.size(); ++i)
+            joint_trajectory_msg.joint_names.push_back(model_ptr->getJointByDofIndex(i)->getJointName());
+
         for(unsigned int i = 0; i < qd.size(); ++i)
         {
-            publishJointState(qd[i], model_ptr, joint_desired_pub);
-            ros::Duration(dT).sleep();
+            trajectory_msgs::JointTrajectoryPoint p;
+            for(unsigned int j = 0; j < q.size(); ++j){
+                p.positions.push_back(qd.at(i)[j]);
+                p.velocities.push_back(0.0);
+                p.accelerations.push_back(0.0);
+                p.effort.push_back(0.0);
+            }
+            //p.time_from_start = dT;
+
+            joint_trajectory_msg.points.push_back(p);
         }
+        joint_trajectory_msg.header.stamp = ros::Time::now();
+        joint_trajectory_desired_pub.publish(joint_trajectory_msg);
     }
     return true;
 }
@@ -144,6 +162,7 @@ void resetTrj(trajectory_utils::CartesianTrj& trajectory_msg)
 bool service_cb3(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
     q0 = q;
+    qd.clear();
     resetTrj(left_arm_trj);
     resetTrj(right_arm_trj);
     return true;
@@ -205,7 +224,7 @@ int main(int argc, char *argv[])
     robot->updateiDynTreeModel(q, true);
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
-    joint_desired_pub = nh.advertise<sensor_msgs::JointState>("/joint_states_desired", 1000);
+    joint_trajectory_desired_pub = nh.advertise<trajectory_msgs::JointTrajectory>("/joint_trajectory", 1000);
 
 
     ros::Subscriber sub_left_arm =  nh.subscribe("/"+left_arm_distal_link+"_trj", 1000, left_cb);
