@@ -23,6 +23,8 @@ OpenSoT::AutoStack::Ptr auto_stack;
 Eigen::VectorXd q;
 std::vector<Eigen::VectorXd> qd;
 Eigen::VectorXd q0;
+Eigen::VectorXd dq;
+std::vector<Eigen::VectorXd> dqd;
 boost::shared_ptr<idynutils2> robot;
 OpenSoT::solvers::QPOases_sot::Ptr solver;
 XBot::ModelInterfaceIDYNUTILS::Ptr model_ptr;
@@ -49,6 +51,7 @@ bool solve = false;
 bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
     q = q0;
+    dq.setZero(q.size());
 
     robot->updateiDynTreeModel(q, true);
 
@@ -74,10 +77,10 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->getJointLimits(qmin, qmax);
     joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
 
-    //vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(2.*M_PI, dT, q.size()));
+    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
 
     auto_stack = (left_arm + right_arm)/
-                 (postural)<<joint_lims;//<<vel_lims;
+                 (postural)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
@@ -94,6 +97,8 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
     qd.clear();
     qd.push_back(q);
+    dqd.clear();
+    dqd.push_back(dq);
     return true;
 }
 
@@ -107,7 +112,8 @@ void right_cb(const trajectory_utils::CartesianTrj::ConstPtr& msg)
   right_arm_trj = *(msg.get());
 }
 
-void publishJointState(const Eigen::VectorXd& q, const XBot::ModelInterfaceIDYNUTILS::Ptr model,
+void publishJointState(const Eigen::VectorXd& q, const Eigen::VectorXd& dq,
+                       const XBot::ModelInterfaceIDYNUTILS::Ptr model,
                        const ros::Publisher& joint_pub)
 {
     sensor_msgs::JointState joints_state_msg;
@@ -115,7 +121,7 @@ void publishJointState(const Eigen::VectorXd& q, const XBot::ModelInterfaceIDYNU
     {
         joints_state_msg.name.push_back(model->getJointByDofIndex(i)->getJointName());
         joints_state_msg.position.push_back(q[i]);
-        joints_state_msg.velocity.push_back(0.0);
+        joints_state_msg.velocity.push_back(dq[i]);
         joints_state_msg.effort.push_back(0.0);
     }
     joints_state_msg.header.stamp = ros::Time::now();
@@ -134,16 +140,18 @@ bool service_cb2(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
         for(unsigned int i = 0; i < qd.size(); ++i)
         {
+
             trajectory_msgs::JointTrajectoryPoint p;
             for(unsigned int j = 0; j < q.size(); ++j){
                 p.positions.push_back(qd.at(i)[j]);
-                p.velocities.push_back(0.0);
+                p.velocities.push_back(dqd.at(i)[j]);
                 p.accelerations.push_back(0.0);
                 p.effort.push_back(0.0);
             }
-            //p.time_from_start = dT;
+            p.time_from_start = ros::Duration(dT);
 
             joint_trajectory_msg.points.push_back(p);
+
         }
         joint_trajectory_msg.header.stamp = ros::Time::now();
         joint_trajectory_desired_pub.publish(joint_trajectory_msg);
@@ -220,6 +228,8 @@ int main(int argc, char *argv[])
     }
     q = q0;
     qd.push_back(q);
+    dq.setZero(q.size());
+    dqd.push_back(dq);
 
     robot->updateiDynTreeModel(q, true);
 
@@ -234,7 +244,6 @@ int main(int argc, char *argv[])
     ros::ServiceServer service3 = nh.advertiseService("/reset", service_cb3);
 
 
-    Eigen::VectorXd dq(q.size()); dq.setZero(dq.size());
     ROS_INFO("Running example_open_sot_node");
     while(ros::ok())
     {
@@ -279,12 +288,13 @@ int main(int argc, char *argv[])
 
             if(solver->solve(dq)){
                 q+=dq;
-                qd.push_back(q);}
+                qd.push_back(q);
+                dqd.push_back(dq);}
             else
                 ROS_ERROR("Solver error!!!");
         }
 
-        publishJointState(q, model_ptr, joint_pub);
+        publishJointState(q, dq, model_ptr, joint_pub);
         ros::spinOnce();
 
         ros::Duration(dT).sleep();
