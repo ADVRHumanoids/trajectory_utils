@@ -44,3 +44,11 @@ The Cartesian trajectories available at the moment are:
 [```segment```](https://github.com/ADVRHumanoids/trajectory_utils/blob/master/msg/segment.msg)
 
 [```segmentTrj```](https://github.com/ADVRHumanoids/trajectory_utils/blob/master/msg/segmentTrj.msg)
+
+#### Marker Menu Entries:
+- ```MinJerk```: creates a linear minimum jerk trajectory between the last pose and the actual pose of the marker of time T
+- ```SemiCircular```: creates a semicircular trajectory between the last pose and the actual pose of the marker of time T. Note that the actual pose of the marker has to lie on the local XY, YZ or ZX plane, if not the trajectory will not be created. The ```Reverse``` entry, if selected, change the path between the two possible semicircles
+- ```Reset Marker Pose```: sets the actual pose of the marker to the last one
+- ```Reset Trajectory```: permits to reset the ```Last``` added trajectory or ```All``` the added trajectories
+- ```Goal```: permits to move to the set external goal using a minimum jerk trajectory of time T (with the ```Move to Goal in T [sec]``` entry) or to remove the goal (with the ```Remove Goal``` entry)
+- ```Restart Marker```: will reset all the stored trajectories and the marker pose to the actual pose of the ```distal_link``` (from ```tf```)
