@@ -59,7 +59,7 @@ void trajectory_publisher::publish(bool delete_visual_tools)
     _visual_tools->publishAxisLabeled(_trj_msg.poses[0].pose, "start",
             rviz_visual_tools::LARGE);
     for(unsigned int i = 0; i < _trj_msg.poses.size(); i += _decimation2)
-        _visual_tools->publishAxis(_trj_msg.poses[i].pose);
+        _visual_tools->publishAxis(_trj_msg.poses[i].pose, 0.1, 0.01);
     _visual_tools->publishAxisLabeled(_trj_msg.poses[_trj_msg.poses.size()-1].pose, "end",
             rviz_visual_tools::LARGE);
 
