@@ -63,10 +63,10 @@ void trajectory_publisher::publish(bool delete_visual_tools)
     _visual_tools->publishAxisLabeled(_trj_msg.poses[_trj_msg.poses.size()-1].pose, "end",
             rviz_visual_tools::LARGE);
 
-#if ROS_VERSION_MINIMUM(1,11,21) //Indigo
-    _visual_tools->triggerBatchPublishAndDisable();
-#else
+#if ROS_VERSION_MINIMUM(1,12,7) //Kinetic
     _visual_tools->triggerAndDisable();
+#else
+    _visual_tools->triggerBatchPublishAndDisable();
 #endif
 }
 
