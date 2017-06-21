@@ -228,6 +228,9 @@ public:
             insert_counter++;
             menu_handler.setCheckState( goal_T_last, interactive_markers::MenuHandler::UNCHECKED );
         }
+        marker_pose_to_goal_entry = menu_handler.insert(goal_entry, "Set Marker Pose",
+            boost::bind(boost::mem_fn(&Marker6DoFs::SetMarkerPoseGoalCb), this, _1));
+        insert_counter++;
 
         //#6 RestartMarker
         restart_marker_entry = menu_handler.insert("Restart Marker",
@@ -582,6 +585,18 @@ public:
         return transform_KDL;
     }
 
+    void SetMarkerPoseGoalCb(
+            const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+    {
+        if(_goal_pose)
+        {
+            geometry_msgs::Pose goal_pose;
+            tf::poseKDLToMsg(*(_goal_pose.get()), goal_pose);
+
+            _server.setPose(int_marker.name, goal_pose);
+            _server.applyChanges();
+        }
+    }
 
 
     void ResetMarkerPose()
@@ -739,6 +754,7 @@ private:
     interactive_markers::MenuHandler::EntryHandle remove_goal_entry;
     interactive_markers::MenuHandler::EntryHandle move_to_goal_entry;
     interactive_markers::MenuHandler::EntryHandle goal_T_last;
+    interactive_markers::MenuHandler::EntryHandle marker_pose_to_goal_entry;
 
     tf::TransformListener _listener;
     tf::StampedTransform _transform;
