@@ -109,7 +109,13 @@ catkin_package(
       DEPENDS system_lib
           )
 
+#This will install the python script in /build/install/lib
+catkin_install_python(PROGRAMS python/joint_states_topic_to_param.py
+                      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
+#This will install the launch folder in build/install/share/trajectory_utils/launch
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
 
 
 ADD_LIBRARY(trajectory_utils SHARED ${TRAJECTORY_UTILS_SOURCES}

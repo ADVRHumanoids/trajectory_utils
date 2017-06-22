@@ -1,4 +1,7 @@
 <launch>
+     <!-- send zeros to initialize the IK node -->
+     <node name="joint_states_topic_to_param" pkg="trajectory_utils" type="joint_states_topic_to_param.py" output="screen"/>
+
      <!-- send the coman robot XML to param server -->
      <param name="robot_description" command="$(find xacro)/xacro.py '$(find coman_urdf)/urdf/coman.urdf'" />
      <param name="robot_description_semantic" textfile="$(find coman_srdf)/srdf/coman.srdf" />   
