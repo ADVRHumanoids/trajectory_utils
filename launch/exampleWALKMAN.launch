@@ -19,7 +19,7 @@
 
 <!-- IK node -->
 <node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
- <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/external/OpenSoT/tests/configs/bigman/configs/config_bigman.yaml" />
+ <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/bigman/configs/config_walkman.yaml" />
  <param name="urdf_path"   value="$(find bigman_urdf)/urdf/bigman.urdf" />
  <param name="srdf_path"   value="$(find bigman_srdf)/srdf/bigman.srdf" />
  <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />

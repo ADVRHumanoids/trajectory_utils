@@ -44,12 +44,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 find_package(srdfdom_advr QUIET)
-find_package(iDynTree QUIET)
 find_package(OpenSoT QUIET)
 FIND_PACKAGE(XBotInterface QUIET)
-find_package(ModelInterfaceIDYNUTILS QUIET)
-FIND_PACKAGE(conversion_utils_YARP QUIET)
-FIND_PACKAGE(idynutils2 QUIET)
+
 
 
 # compilation flags
@@ -131,13 +128,12 @@ if(${TRAJECTORY_UTILS_COMPILE_EXAMPLES})
         ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES})
     endif()
 
-    if(${OpenSoT_FOUND} AND ${srdfdom_advr_FOUND} AND ${iDynTree_FOUND})
+    if(${OpenSoT_FOUND} AND ${srdfdom_advr_FOUND})
         message("exampleOpenSoT added to compilation...")
         ADD_EXECUTABLE(exampleOpenSoT example/exampleOpenSoT.cpp)
         TARGET_LINK_LIBRARIES(exampleOpenSoT ${kdl_parser_LIBRARIES} ${orocos_kdl_LIBRARIES}
         ${Boost_LIBRARIES} ${rviz_visual_tools_LIBRARIES} ${OpenSoT_LIBRARIES} ${XBotInterface_LIBRARIES}
-        ${srdfdom_advr_LIBRARIES} ${ModelInterfaceIDYNUTILS_LIBRARIES}
-        ${conversion_utils_YARP_LIBRARIES} ${idynutils2_LIBRARIES})
+        ${srdfdom_advr_LIBRARIES})
 
        catkin_package(
               INCLUDE_DIRS include

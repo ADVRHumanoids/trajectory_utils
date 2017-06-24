@@ -1,6 +1,4 @@
 #include <ros/ros.h>
-#include <ModelInterfaceIDYNUTILS/ModelInterfaceIDYNUTILS.h>
-#include <advr_humanoids_common_utils/idynutils.h>
 #include <sensor_msgs/JointState.h>
 #include <OpenSoT/tasks/velocity/Cartesian.h>
 #include <OpenSoT/tasks/velocity/Postural.h>
@@ -13,8 +11,7 @@
 #include <std_srvs/Empty.h>
 #include <trajectory_utils/ros_nodes/trj_designer.h>
 #include <trajectory_msgs/JointTrajectory.h>
-
-static void null_deleter(idynutils2 *) {}
+#include <XBotInterface/ModelInterface.h>
 
 trajectory_utils::CartesianTrj left_arm_trj;
 trajectory_utils::CartesianTrj right_arm_trj;
@@ -25,9 +22,8 @@ std::vector<Eigen::VectorXd> qd;
 Eigen::VectorXd q0;
 Eigen::VectorXd dq;
 std::vector<Eigen::VectorXd> dqd;
-boost::shared_ptr<idynutils2> robot;
 OpenSoT::solvers::QPOases_sot::Ptr solver;
-XBot::ModelInterfaceIDYNUTILS::Ptr model_ptr;
+XBot::ModelInterface::Ptr model_ptr;
 OpenSoT::tasks::velocity::Cartesian::Ptr left_arm;
 OpenSoT::tasks::velocity::Cartesian::Ptr right_arm;
 OpenSoT::tasks::velocity::Postural::Ptr postural;
@@ -53,7 +49,8 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     q = q0;
     dq.setZero(q.size());
 
-    robot->updateiDynTreeModel(q, true);
+    model_ptr->setJointPosition(q);
+    model_ptr->update();
 
 
     left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
@@ -113,7 +110,7 @@ void right_cb(const trajectory_utils::CartesianTrj::ConstPtr& msg)
 }
 
 void publishJointState(const Eigen::VectorXd& q, const Eigen::VectorXd& dq,
-                       const XBot::ModelInterfaceIDYNUTILS::Ptr model,
+                       const XBot::ModelInterface::Ptr model,
                        const ros::Publisher& joint_pub)
 {
     sensor_msgs::JointState joints_state_msg;
@@ -206,10 +203,7 @@ int main(int argc, char *argv[])
     nh.getParam("dT", dT);
     ROS_INFO("dT is : %f [sec]", dT);
 
-    robot.reset( new idynutils2("robot", urdf_path, srdf_path));
-    model_ptr = std::dynamic_pointer_cast<XBot::ModelInterfaceIDYNUTILS>
-            (XBot::ModelInterface::getModel(config_path));
-    model_ptr->loadModel(boost::shared_ptr<idynutils2>(&(*(robot.get())), &null_deleter));
+    model_ptr = XBot::ModelInterface::getModel(config_path);
     if(!model_ptr)
         std::cout<<"pointer is NULL "<<model_ptr.get()<<std::endl;
 
@@ -231,7 +225,8 @@ int main(int argc, char *argv[])
     dq.setZero(q.size());
     dqd.push_back(dq);
 
-    robot->updateiDynTreeModel(q, true);
+    model_ptr->setJointPosition(q);
+    model_ptr->update();
 
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
     joint_trajectory_desired_pub = nh.advertise<trajectory_msgs::JointTrajectory>("/joint_trajectory", 1000);
@@ -282,7 +277,8 @@ int main(int argc, char *argv[])
         }
 
         if(solve){
-            robot->updateiDynTreeModel(q, true);
+            model_ptr->setJointPosition(q);
+            model_ptr->update();
 
             auto_stack->update(q);
 

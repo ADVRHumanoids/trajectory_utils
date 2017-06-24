@@ -17,7 +17,7 @@
 
 <!-- IK node -->
 <node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
- <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/external/OpenSoT/tests/configs/coman/configs/config_coman.yaml" />
+ <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/coman/configs/config_coman.yaml" />
  <param name="urdf_path"   value="$(find coman_urdf)/urdf/coman.urdf" />
  <param name="srdf_path"   value="$(find coman_srdf)/srdf/coman.srdf" />
  <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />
