@@ -881,6 +881,8 @@ public:
     void setTrj()
     {
         _msg.frames.clear();
+        _msg.accelerations.clear();
+        _msg.twists.clear();
 
         trajectory_utils::Cartesian T;
         KDL::Frame F;
