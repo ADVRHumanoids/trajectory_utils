@@ -822,6 +822,8 @@ public:
 
     void setSegments(std::vector<segment_trj>& segments)
     {
+        _msg2.segments.clear();
+
         double qx,qy,qz,qw;
         for(unsigned int i = 0; i < segments.size(); ++i)
         {
