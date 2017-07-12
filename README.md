@@ -9,6 +9,8 @@ trajectory_designer
 
 [![trajectory_designer](https://img.youtube.com/vi/HPBwuupm1Fo/0.jpg)](https://www.youtube.com/watch?v=HPBwuupm1Fo)
 
+[![trajectory_designer2](https://img.youtube.com/vi/TLbpvOc6UQA/0.jpg)](https://www.youtube.com/watch?v=TLbpvOc6UQA)
+
 The Cartesian trajectories available at the moment are:
 - Minimum Jerk
 - Semicircular in along the local planes XY, YZ and XZ
