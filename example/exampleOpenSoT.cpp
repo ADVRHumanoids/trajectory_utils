@@ -5,6 +5,7 @@
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
+#include <OpenSoT/tasks/velocity/Manipulability.h>
 #include <trajectory_utils/CartesianTrj.h>
 #include <sensor_msgs/JointState.h>
 #include <kdl_conversions/kdl_msg.h>
@@ -34,7 +35,8 @@ std::string right_arm_distal_link, right_arm_base_link;
 ros::Publisher joint_trajectory_desired_pub;
 std::string tf_prefix;
 
-
+OpenSoT::tasks::velocity::Manipulability::Ptr left_arm_manip;
+OpenSoT::tasks::velocity::Manipulability::Ptr right_arm_manip;
 
 
 int left_counter = -1;
@@ -56,11 +58,15 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
+    left_arm_manip.reset(
+                new OpenSoT::tasks::velocity::Manipulability(q, *(model_ptr.get()), left_arm));
 
-    left_arm->setOrientationErrorGain(1.0);
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
+    right_arm_manip.reset(
+                new OpenSoT::tasks::velocity::Manipulability(q, *(model_ptr.get()), right_arm));
+
     KDL::Frame F;
     right_arm->getActualPose(F);
     trj_designer::Marker6DoFs::printPose("right arm initial pose", F);
@@ -81,7 +87,7 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e10));
+                                                  auto_stack->getBounds(), 1e0));
 
     if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
@@ -244,6 +250,8 @@ int main(int argc, char *argv[])
     {
         KDL::Frame l_goal; l_goal.Identity();
         KDL::Frame r_goal; r_goal.Identity();
+
+
 
         if(solve)
         {

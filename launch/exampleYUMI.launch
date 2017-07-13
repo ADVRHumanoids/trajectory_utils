@@ -1,0 +1,49 @@
+<launch>
+
+<!-- send the coman robot XML to param server -->
+ <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_urdf)/urdf/yumi.urdf'" />
+ <param name="robot_description_semantic" textfile="$(find yumi_srdf)/srdf/yumi.srdf" />   
+ 
+<!-- start robot state publisher -->
+<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
+ <param name="publish_frequency" type="double" value="250.0" />
+</node>
+
+
+<arg name="base_linkR" value="yumi_body" />
+<arg name="base_linkL" value="yumi_body" />
+<arg name="right_arm_distal_link" value="gripper_r_base" />
+<arg name="left_arm_distal_link" value="gripper_l_base" />
+<arg name="dT" value="0.01" />
+
+
+<!-- IK node -->
+<node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
+ <param name="config_path" value="$(find yumi_config)/configs/config_yumi.yaml" />
+ <param name="urdf_path"   value="$(find yumi_urdf)/urdf/yumi.urdf" />
+ <param name="srdf_path"   value="$(find yumi_srdf)/srdf/yumi.srdf" />
+ <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />
+ <param name="left_arm_base_link"   value="$(arg base_linkL)" /> 
+ <param name="right_arm_distal_link"   value="$(arg right_arm_distal_link)" />
+ <param name="right_arm_base_link"   value="$(arg base_linkR)" />
+ <param name="dT"   value="$(arg dT)" />
+ <rosparam param="/zeros">
+       yumi_joint_1_l: 0.3
+       yumi_joint_1_r: -0.3
+</rosparam>
+</node>
+
+<!-- Trajectory Designer nodes -->
+<node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig1" output="screen">
+  <param name="base_link" value="$(arg base_linkL)" />
+  <param name="distal_link" value="$(arg left_arm_distal_link)" />
+  <param name="dT"   value="$(arg dT)" />
+</node>
+
+<node pkg="trajectory_utils" type="trajectory_designer" name="trj_desig2" output="screen">
+  <param name="base_link" value="$(arg base_linkR)" />
+  <param name="distal_link" value="$(arg right_arm_distal_link)" />
+  <param name="dT"   value="$(arg dT)" />
+</node>
+
+</launch>
