@@ -4,6 +4,7 @@
 #include <OpenSoT/tasks/velocity/Postural.h>
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
+#include <OpenSoT/constraints/velocity/SelfCollisionAvoidance.h>
 #include <OpenSoT/utils/AutoStack.h>
 #include <OpenSoT/tasks/velocity/Manipulability.h>
 #include <trajectory_utils/CartesianTrj.h>
@@ -13,6 +14,8 @@
 #include <trajectory_utils/ros_nodes/trj_designer.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <XBotInterface/ModelInterface.h>
+#include <qpOASES.hpp>
+
 
 trajectory_utils::CartesianTrj left_arm_trj;
 trajectory_utils::CartesianTrj right_arm_trj;
@@ -37,6 +40,11 @@ std::string tf_prefix;
 
 OpenSoT::tasks::velocity::Manipulability::Ptr left_arm_manip;
 OpenSoT::tasks::velocity::Manipulability::Ptr right_arm_manip;
+
+OpenSoT::constraints::velocity::SelfCollisionAvoidance::Ptr self_collision_avoidance;
+std::string base_link_sca;
+std::map<std::string,std::string> map_links_in_contact;
+bool sca = false;
 
 
 int left_counter = -1;
@@ -82,12 +90,44 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
     vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
 
+
+    if(base_link_sca != "" && map_links_in_contact.size() > 0)
+    {
+        ROS_INFO("Self Collision Avoidance");
+        self_collision_avoidance.reset(new OpenSoT::constraints::velocity::SelfCollisionAvoidance(
+                                       q, *(model_ptr.get()), base_link_sca));
+        std::list<std::pair<std::string,std::string> > whiteList;
+        std::map<std::string, std::string>::iterator it;
+        for(it = map_links_in_contact.begin(); it != map_links_in_contact.end(); it++)
+            whiteList.push_back(std::pair<std::string, std::string>(
+                it->first, it->second));
+        self_collision_avoidance->setCollisionWhiteList(whiteList);
+        self_collision_avoidance->update(q);
+        sca = true;
+    }
+
     auto_stack = (left_arm + right_arm)/
                  (postural)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
-    solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e0));
+    if(sca)
+        solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
+                                                  auto_stack->getBounds(),
+                                                  self_collision_avoidance,1e7));
+    else
+        solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
+                                                  auto_stack->getBounds(),1e7));
+
+    if(sca)
+    {
+        ROS_WARN("Setting Options to Reliable to solver");
+        qpOASES::Options opt;
+        opt.setToReliable();
+        opt.printLevel = qpOASES::PL_NONE;
+        for(unsigned int i = 0; i < auto_stack->getStack().size(); ++i)
+            solver->setOptions(i, opt);
+    }
+
 
     if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
@@ -213,6 +253,24 @@ int main(int argc, char *argv[])
     if(!model_ptr)
         std::cout<<"pointer is NULL "<<model_ptr.get()<<std::endl;
 
+
+    nh.param("base_link_sca", base_link_sca,std::string(""));
+    if(base_link_sca != "")
+        ROS_INFO("base_link_sca %s", base_link_sca.c_str());
+    nh.getParam("/white_map", map_links_in_contact);
+    if(map_links_in_contact.size() > 0)
+    {
+        ROS_INFO("white_map:");
+        std::map<std::string, std::string>::iterator it = map_links_in_contact.begin();
+        while (it != map_links_in_contact.end()) {
+            ROS_INFO("  %s --> %s", it->first.c_str(), it->second.c_str());
+            it++;
+        }
+    }
+
+
+
+
     q0.resize(model_ptr->getJointNum()); q0.setZero(q0.size());
     std::map<std::string,double> joints_initial_value;
     nh.getParam("/zeros", joints_initial_value);
@@ -289,6 +347,9 @@ int main(int argc, char *argv[])
             model_ptr->update();
 
             auto_stack->update(q);
+            if(sca)
+                self_collision_avoidance->update(q);
+
 
             if(solver->solve(dq)){
                 q+=dq;

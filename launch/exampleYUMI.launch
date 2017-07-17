@@ -1,7 +1,7 @@
 <launch>
 
 <!-- send the coman robot XML to param server -->
- <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_urdf)/urdf/yumi.urdf'" />
+ <param name="robot_description" command="$(find xacro)/xacro.py '$(find yumi_urdf)/urdf/yumi_capsules.rviz'" />
  <param name="robot_description_semantic" textfile="$(find yumi_srdf)/srdf/yumi.srdf" />   
  
 <!-- start robot state publisher -->
@@ -26,6 +26,10 @@
  <param name="left_arm_base_link"   value="$(arg base_linkL)" /> 
  <param name="right_arm_distal_link"   value="$(arg right_arm_distal_link)" />
  <param name="right_arm_base_link"   value="$(arg base_linkR)" />
+ <param name="base_link_sca" value="yumi_body" />
+ <rosparam param="/white_map">
+       gripper_r_base: gripper_l_base
+ </rosparam>
  <param name="dT"   value="$(arg dT)" />
  <rosparam param="/zeros">
        yumi_joint_1_l: 0.3
