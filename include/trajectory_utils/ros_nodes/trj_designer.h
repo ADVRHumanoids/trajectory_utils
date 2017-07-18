@@ -355,10 +355,11 @@ public:
         boost::shared_ptr<const urdf::Link> link = _urdf.getLink(_distal_link);
         boost::shared_ptr<const urdf::Link> controlled_link = link;
 
+        KDL::Frame T; T.Identity();
         while(!link->visual)
-            link = _urdf.getLink(link->parent_joint->parent_link_name);
+                link = _urdf.getLink(link->parent_joint->parent_link_name);
+        T = getPose(controlled_link->name, link->name);
 
-        KDL::Frame T = getPose(controlled_link->name, link->name);
 
 
         if(link->visual->geometry->type == urdf::Geometry::MESH)
@@ -375,12 +376,12 @@ public:
             T_marker.p.x(link->visual->origin.position.x);
             T_marker.p.y(link->visual->origin.position.y);
             T_marker.p.z(link->visual->origin.position.z);
-            T_marker.M.Quaternion(link->visual->origin.rotation.x,
+            T_marker.M = T_marker.M.Quaternion(link->visual->origin.rotation.x,
                                   link->visual->origin.rotation.y,
                                   link->visual->origin.rotation.z,
                                   link->visual->origin.rotation.w);
 
-            T_marker = T*T_marker;
+            T = T*T_marker;
             marker.pose.position.x = T.p.x();
             marker.pose.position.y = T.p.y();
             marker.pose.position.z = T.p.z();
