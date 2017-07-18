@@ -904,13 +904,13 @@ public:
                 //angle_rot;
                 seg_msg.angle_rot.data = seg.angle_rot;
                 //circle_center;
-                seg_msg.circle_center.x = seg_msg.circle_center.x;
-                seg_msg.circle_center.y = seg_msg.circle_center.y;
-                seg_msg.circle_center.z = seg_msg.circle_center.z;
+                seg_msg.circle_center.x = seg.circle_center.x();
+                seg_msg.circle_center.y = seg.circle_center.y();
+                seg_msg.circle_center.z = seg.circle_center.z();
                 //plane_normal;
-                seg_msg.plane_normal.x = seg_msg.plane_normal.x;
-                seg_msg.plane_normal.y = seg_msg.plane_normal.y;
-                seg_msg.plane_normal.z = seg_msg.plane_normal.z;
+                seg_msg.plane_normal.x = seg.plane_normal.x();
+                seg_msg.plane_normal.y = seg.plane_normal.y();
+                seg_msg.plane_normal.z = seg.plane_normal.z();
             }
 
             _msg2.segments.push_back(seg_msg);
