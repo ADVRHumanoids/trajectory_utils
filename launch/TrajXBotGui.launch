@@ -2,7 +2,7 @@
 
  <param name="robot_description" command="$(find xacro)/xacro.py '$(find bigman_urdf)/urdf/bigman.urdf'" />
 
-<arg name="base_link" value="world_odom" />
+<arg name="base_link" value="base_link" />
 <arg name="right_arm_distal_link" value="RSoftHand" />
 <arg name="left_arm_distal_link" value="LSoftHand" />
 <arg name="dT" value="0.01" />
