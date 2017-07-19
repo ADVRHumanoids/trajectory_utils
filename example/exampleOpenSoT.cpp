@@ -69,9 +69,11 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     left_arm_manip.reset(
                 new OpenSoT::tasks::velocity::Manipulability(q, *(model_ptr.get()), left_arm));
 
+    left_arm->setOrientationErrorGain(1.0);
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
+    right_arm->setOrientationErrorGain(1.0);
     right_arm_manip.reset(
                 new OpenSoT::tasks::velocity::Manipulability(q, *(model_ptr.get()), right_arm));
 
@@ -308,8 +310,8 @@ int main(int argc, char *argv[])
     {
         KDL::Frame l_goal; l_goal.Identity();
         KDL::Frame r_goal; r_goal.Identity();
-
-
+        KDL::Twist vl_goal; vl_goal.Zero();
+        KDL::Twist vr_goal; vr_goal.Zero();
 
         if(solve)
         {
@@ -317,8 +319,13 @@ int main(int argc, char *argv[])
                 left_counter++;
                 if(left_counter < left_arm_trj.frames.size()){
                     geometry_msgs::PoseStamped p = left_arm_trj.frames[left_counter].frame;
+                    geometry_msgs::Twist v = left_arm_trj.twists[left_counter];
+
                     tf::PoseMsgToKDL(p.pose, l_goal);
-                    left_arm->setReference(l_goal);
+                    tf::TwistMsgToKDL(v, vl_goal);
+
+
+                    left_arm->setReference(l_goal, vl_goal*dT);
                 }
             }
 
@@ -326,8 +333,12 @@ int main(int argc, char *argv[])
                 right_counter++;
                 if(right_counter < right_arm_trj.frames.size()){
                     geometry_msgs::PoseStamped p = right_arm_trj.frames[right_counter].frame;
+                    geometry_msgs::Twist v = right_arm_trj.twists[right_counter];
+
                     tf::PoseMsgToKDL(p.pose, r_goal);
-                    right_arm->setReference(r_goal);
+                    tf::TwistMsgToKDL(v, vr_goal);
+
+                    right_arm->setReference(r_goal, vr_goal*dT);
                 }
             }
 

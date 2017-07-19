@@ -339,9 +339,9 @@ public:
     visualization_msgs::Marker makeSphere( visualization_msgs::InteractiveMarker &msg )
     {
       marker.type = visualization_msgs::Marker::SPHERE;
-      marker.scale.x = msg.scale * 0.45;
-      marker.scale.y = msg.scale * 0.45;
-      marker.scale.z = msg.scale * 0.45;
+      marker.scale.x = msg.scale * 1.;//0.45
+      marker.scale.y = msg.scale * 1.;
+      marker.scale.z = msg.scale * 1.;
       marker.color.r = 0.5;
       marker.color.g = 0.5;
       marker.color.b = 0.5;
@@ -352,40 +352,53 @@ public:
 
     visualization_msgs::Marker makeSTL( visualization_msgs::InteractiveMarker &msg )
     {
-
-
         boost::shared_ptr<const urdf::Link> link = _urdf.getLink(_distal_link);
+        boost::shared_ptr<const urdf::Link> controlled_link = link;
 
-        if(link->visual)
+        KDL::Frame T; T.Identity();
+        while(!link->visual)
+                link = _urdf.getLink(link->parent_joint->parent_link_name);
+        T = getPose(controlled_link->name, link->name);
+
+
+
+        if(link->visual->geometry->type == urdf::Geometry::MESH)
         {
-            if(link->visual->geometry->type == urdf::Geometry::MESH)
-            {
-                marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+            marker.type = visualization_msgs::Marker::MESH_RESOURCE;
 
-                boost::shared_ptr<urdf::Mesh> mesh =
-                        boost::static_pointer_cast<urdf::Mesh>(link->visual->geometry);
+            boost::shared_ptr<urdf::Mesh> mesh =
+                    boost::static_pointer_cast<urdf::Mesh>(link->visual->geometry);
 
-                marker.mesh_resource = mesh->filename;
+            marker.mesh_resource = mesh->filename;
 
-                marker.pose.position.x = link->visual->origin.position.x;
-                marker.pose.position.y = link->visual->origin.position.y;
-                marker.pose.position.z = link->visual->origin.position.z;
-                marker.pose.orientation.x = link->visual->origin.rotation.x;
-                marker.pose.orientation.y = link->visual->origin.rotation.y;
-                marker.pose.orientation.z = link->visual->origin.rotation.z;
-                marker.pose.orientation.w = link->visual->origin.rotation.w;
 
-                marker.color.r = 0.5;
-                marker.color.g = 0.5;
-                marker.color.b = 0.5;
+            KDL::Frame T_marker;
+            T_marker.p.x(link->visual->origin.position.x);
+            T_marker.p.y(link->visual->origin.position.y);
+            T_marker.p.z(link->visual->origin.position.z);
+            T_marker.M = T_marker.M.Quaternion(link->visual->origin.rotation.x,
+                                  link->visual->origin.rotation.y,
+                                  link->visual->origin.rotation.z,
+                                  link->visual->origin.rotation.w);
 
-                marker.scale.x = mesh->scale.x;
-                marker.scale.y = mesh->scale.y;
-                marker.scale.z = mesh->scale.z;
-            }
+            T = T*T_marker;
+            marker.pose.position.x = T.p.x();
+            marker.pose.position.y = T.p.y();
+            marker.pose.position.z = T.p.z();
+            double qx,qy,qz,qw; T.M.GetQuaternion(qx,qy,qz,qw);
+            marker.pose.orientation.x = qx;
+            marker.pose.orientation.y = qy;
+            marker.pose.orientation.z = qz;
+            marker.pose.orientation.w = qw;
+
+            marker.color.r = 0.5;
+            marker.color.g = 0.5;
+            marker.color.b = 0.5;
+
+            marker.scale.x = mesh->scale.x;
+            marker.scale.y = mesh->scale.y;
+            marker.scale.z = mesh->scale.z;
         }
-        else
-            makeSphere(msg);
 
         marker.color.a = .9;
         return marker;
@@ -556,6 +569,34 @@ public:
         //start_pose = actual_pose;
         start_pose = actual_pose;
 
+    }
+
+    KDL::Frame getPose(const std::string& base_link, const std::string& distal_link)
+    {
+
+        for(unsigned int i = 0; i < 10; ++i){
+        try{
+            ros::Time now = ros::Time::now();
+            _listener.waitForTransform(base_link, distal_link,now,ros::Duration(1.0));
+
+            _listener.lookupTransform(base_link, distal_link,
+                ros::Time(), _transform);
+        }
+        catch (tf::TransformException ex){
+            ROS_ERROR("%s",ex.what());
+            ros::Duration(1.0).sleep();
+        }}
+        KDL::Frame transform_KDL; transform_KDL = transform_KDL.Identity();
+        transform_KDL.p.x(_transform.getOrigin().x());
+        transform_KDL.p.y(_transform.getOrigin().y());
+        transform_KDL.p.z(_transform.getOrigin().z());
+
+        transform_KDL.M = transform_KDL.M.Quaternion(
+                    _transform.getRotation().getX(), _transform.getRotation().getY(),
+                    _transform.getRotation().getZ(), _transform.getRotation().getW()
+                    );
+
+        return transform_KDL;
     }
 
     KDL::Frame getRobotActualPose()
@@ -864,13 +905,13 @@ public:
                 //angle_rot;
                 seg_msg.angle_rot.data = seg.angle_rot;
                 //circle_center;
-                seg_msg.circle_center.x = seg_msg.circle_center.x;
-                seg_msg.circle_center.y = seg_msg.circle_center.y;
-                seg_msg.circle_center.z = seg_msg.circle_center.z;
+                seg_msg.circle_center.x = seg.circle_center.x();
+                seg_msg.circle_center.y = seg.circle_center.y();
+                seg_msg.circle_center.z = seg.circle_center.z();
                 //plane_normal;
-                seg_msg.plane_normal.x = seg_msg.plane_normal.x;
-                seg_msg.plane_normal.y = seg_msg.plane_normal.y;
-                seg_msg.plane_normal.z = seg_msg.plane_normal.z;
+                seg_msg.plane_normal.x = seg.plane_normal.x();
+                seg_msg.plane_normal.y = seg.plane_normal.y();
+                seg_msg.plane_normal.z = seg.plane_normal.z();
             }
 
             _msg2.segments.push_back(seg_msg);
