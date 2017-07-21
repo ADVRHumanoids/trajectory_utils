@@ -671,7 +671,7 @@ public:
         if(segments_trj.size() > 0)
             robot_pose_KDL = segments_trj[segments_trj.size()-1].end;
         else
-            robot_pose_KDL = actual_pose;
+            robot_pose_KDL = initial_pose;
 
 
 
