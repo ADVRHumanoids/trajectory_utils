@@ -90,14 +90,16 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->getJointLimits(qmin, qmax);
     joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
 
-    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
+    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(2., dT, q.size()));
 
 
     if(base_link_sca != "" && map_links_in_contact.size() > 0)
     {
         ROS_INFO("Self Collision Avoidance");
         self_collision_avoidance.reset(new OpenSoT::constraints::velocity::SelfCollisionAvoidance(
-                                       q, *(model_ptr.get()), base_link_sca));
+                                       q, *(model_ptr.get()), base_link_sca,
+                                       std::numeric_limits<double>::infinity(),
+                                       0.0, 0.01));
         std::list<std::pair<std::string,std::string> > whiteList;
         std::map<std::string, std::string>::iterator it;
         for(it = map_links_in_contact.begin(); it != map_links_in_contact.end(); it++)
@@ -115,10 +117,10 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     if(sca)
         solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
                                                   auto_stack->getBounds(),
-                                                  self_collision_avoidance,1e7));
+                                                  self_collision_avoidance,1e9));
     else
         solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(),1e7));
+                                                  auto_stack->getBounds(),1e9));
 
     if(sca)
     {
