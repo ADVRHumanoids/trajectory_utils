@@ -2,9 +2,9 @@
      <!-- send zeros to initialize the IK node -->
      <node name="joint_states_topic_to_param" pkg="trajectory_utils" type="joint_states_topic_to_param.py" output="screen"/>
 
-     <!-- send the coman robot XML to param server -->
-     <param name="robot_description" command="$(find xacro)/xacro.py '$(find coman_urdf)/urdf/coman.urdf'" />
-     <param name="robot_description_semantic" textfile="$(find coman_srdf)/srdf/coman.srdf" />   
+     <!-- send the cogimon robot XML to param server -->
+     <param name="robot_description" command="$(find xacro)/xacro.py '$(find cogimon_urdf)/urdf/cogimon.urdf'" />
+     <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf" />   
      
     <!-- start robot state publisher -->
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
@@ -24,16 +24,16 @@
     <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 base_link previewer/base_link 250.0" />
 
 
-    <arg name="base_link" value="Waist" />
-    <arg name="right_arm_distal_link" value="RSoftHand" />
-    <arg name="left_arm_distal_link" value="LSoftHand" />
+    <arg name="base_link" value="l_sole" />
+    <arg name="left_arm_distal_link" value="r_sole" />
+    <arg name="right_arm_distal_link" value="Waist" />
     <arg name="dT" value="0.01" />
 
     <!-- IK node -->
     <node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
-      <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/external/OpenSoT/tests/configs/coman/configs/config_coman.yaml" />
-      <param name="urdf_path"   value="$(find coman_urdf)/urdf/coman.urdf" />
-      <param name="srdf_path"   value="$(find coman_srdf)/srdf/coman.srdf" />
+      <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/cogimon/configs/config_cogimon.yaml" />
+      <param name="urdf_path"   value="$(find cogimon_urdf)/urdf/cogimon.urdf" />
+      <param name="srdf_path"   value="$(find cogimon_srdf)/srdf/cogimon.srdf" />
       <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />
       <param name="left_arm_base_link"   value="$(arg base_link)" /> 
       <param name="right_arm_distal_link"   value="$(arg right_arm_distal_link)" />
