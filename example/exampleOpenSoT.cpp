@@ -5,6 +5,7 @@
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
+#include <OpenSoT/tasks/velocity/Gaze.h>
 #include <trajectory_utils/CartesianTrj.h>
 #include <sensor_msgs/JointState.h>
 #include <kdl_conversions/kdl_msg.h>
@@ -27,13 +28,13 @@ XBot::ModelInterface::Ptr model_ptr;
 OpenSoT::tasks::velocity::Cartesian::Ptr left_arm;
 OpenSoT::tasks::velocity::Cartesian::Ptr right_arm;
 OpenSoT::tasks::velocity::Postural::Ptr postural;
+OpenSoT::tasks::velocity::Gaze::Ptr gaze;
 OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
 OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
 std::string left_arm_distal_link, left_arm_base_link;
 std::string right_arm_distal_link, right_arm_base_link;
 ros::Publisher joint_trajectory_desired_pub;
 std::string tf_prefix;
-
 
 
 
@@ -71,7 +72,13 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     right_arm->setOrientationErrorGain(1.0);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
 
-
+    gaze.reset(new OpenSoT::tasks::velocity::Gaze("gaze", q, *model_ptr, right_arm_base_link));
+    std::vector<bool> active_joint_mask = gaze->getActiveJointsMask();
+    active_joint_mask.assign(active_joint_mask.size(), true);
+    active_joint_mask[model_ptr->getDofIndex("WaistLat")] = false;
+    active_joint_mask[model_ptr->getDofIndex("WaistSag")] = false;
+    active_joint_mask[model_ptr->getDofIndex("WaistYaw")] = false;
+    gaze->setActiveJointsMask(active_joint_mask);
 
     Eigen::VectorXd qmin, qmax;
     model_ptr->getJointLimits(qmin, qmax);
@@ -79,7 +86,7 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
     vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
 
-    auto_stack = (left_arm + right_arm)/
+    auto_stack = (left_arm + right_arm + gaze)/
                  (postural)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
@@ -276,6 +283,10 @@ int main(int argc, char *argv[])
                     tf::TwistMsgToKDL(v, vr_goal);
 
                     right_arm->setReference(r_goal, vr_goal*dT);
+
+
+
+                    gaze->setGaze(r_goal);
                 }
             }
 
