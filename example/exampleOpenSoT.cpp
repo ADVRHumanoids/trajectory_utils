@@ -76,31 +76,29 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     setWorld(l_sole_T_Waist, q, *model_ptr);
 
 
-
-
-
     left_foot.reset(new Cartesian("left_foot", q, *model_ptr, "l_foot", "world"));
+    left_foot->setLambda(0.0);
     right_foot.reset(new Cartesian("right_foot", q, *model_ptr, "r_foot", "world"));
+    right_foot->setLambda(0.0);
     com.reset(new CoM(q, *model_ptr));
-    com->setLambda(0.1);
+    com->setLambda(0.0);
 
 
     left_arm.reset(new Cartesian("left_arm", q, *(model_ptr.get()),
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
 
-    left_arm->setLambda(0.1);
+    left_arm->setLambda(0.0);
 
     right_arm.reset(new Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
-    right_arm->setLambda(0.1);
+    right_arm->setLambda(0.0);
 
     KDL::Frame F;
     right_arm->getActualPose(F);
     trj_designer::Marker6DoFs::printPose("right arm initial pose", F);
 
-    right_arm->setOrientationErrorGain(1.0);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
 
 
@@ -118,7 +116,7 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e10));
+                                                  auto_stack->getBounds(), 1e1));
 
     if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
@@ -313,14 +311,14 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if(right_counter == right_arm_trj.frames.size() &&
-               left_counter == left_arm_trj.frames.size() ||
-               right_counter == right_arm_trj.frames.size() &&
-               left_counter == -1 ||
-               left_counter == left_arm_trj.frames.size() &&
-               right_counter == -1 ){
-                solve = false;
-            }
+//            if(right_counter == right_arm_trj.frames.size() &&
+//               left_counter == left_arm_trj.frames.size() ||
+//               right_counter == right_arm_trj.frames.size() &&
+//               left_counter == -1 ||
+//               left_counter == left_arm_trj.frames.size() &&
+//               right_counter == -1 ){
+//                solve = false;
+//            }
 
         }
 
