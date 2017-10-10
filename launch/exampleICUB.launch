@@ -1,7 +1,7 @@
 <launch>
 
 <!-- send the coman robot XML to param server -->
- <param name="robot_description" command="$(find xacro)/xacro.py '$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/urdf/icub.urdf'" />
+ <param name="robot_description" command="$(find xacro)/xacro.py '$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/urdf/icub_floating_base.urdf'" />
  <param name="robot_description_semantic" textfile="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/srdf/icub.srdf" />   
  
 <!-- start robot state publisher -->
@@ -10,14 +10,14 @@
 </node>
 
 
-<arg name="base_link" value="waist" />
+<arg name="base_link" value="l_sole" />
 <arg name="left_arm_distal_link" value="l_hand" />
 <arg name="right_arm_distal_link" value="r_hand" />
 <arg name="dT" value="0.01" />
 
 <!-- IK node -->
 <node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen">
- <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/configs/config_icub.yaml" />
+ <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/configs/config_icub_floating_base.yaml" />
  <param name="urdf_path"   value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/urdf/icub.urdf" />
  <param name="srdf_path"   value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/icub/srdf/icub.srdf" />
  <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />
@@ -27,7 +27,15 @@
  <param name="dT"   value="$(arg dT)" />
  <rosparam param="/zeros">
        r_elbow_joint: 1.3962634015954636
+       r_shoulder_roll: 0.3
        l_elbow_joint: 1.3962634015954636
+       l_shoulder_roll: 0.3
+       r_hip_pitch: 0.3
+       r_knee: -0.6
+       r_ankle_pitch: -0.3
+       l_hip_pitch: 0.3
+       l_knee: -0.6
+       l_ankle_pitch: -0.3
 </rosparam>
 </node>
 

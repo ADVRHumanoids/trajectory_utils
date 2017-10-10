@@ -24,8 +24,11 @@ Eigen::VectorXd dq;
 std::vector<Eigen::VectorXd> dqd;
 OpenSoT::solvers::QPOases_sot::Ptr solver;
 XBot::ModelInterface::Ptr model_ptr;
+OpenSoT::tasks::velocity::Cartesian::Ptr left_foot;
+OpenSoT::tasks::velocity::Cartesian::Ptr right_foot;
 OpenSoT::tasks::velocity::Cartesian::Ptr left_arm;
 OpenSoT::tasks::velocity::Cartesian::Ptr right_arm;
+OpenSoT::tasks::velocity::CoM::Ptr com;
 OpenSoT::tasks::velocity::Postural::Ptr postural;
 OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
 OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
@@ -44,6 +47,15 @@ double dT;
 
 bool solve = false;
 
+using namespace OpenSoT::tasks::velocity;
+
+void setWorld(const KDL::Frame& l_sole_T_Waist, Eigen::VectorXd& q, XBot::ModelInterface& _model)
+{
+    _model.setFloatingBasePose(l_sole_T_Waist);
+    _model.update();
+    _model.getJointPosition(q);
+}
+
 bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
     q = q0;
@@ -53,16 +65,36 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->update();
 
 
-    left_arm.reset(new OpenSoT::tasks::velocity::Cartesian("left_arm", q, *(model_ptr.get()),
+
+    //Update world according this new configuration:
+    KDL::Frame l_sole_T_Waist;
+    model_ptr->getPose("waist", "l_sole", l_sole_T_Waist);
+
+    l_sole_T_Waist.p.x(0.0);
+    l_sole_T_Waist.p.y(0.0);
+
+    setWorld(l_sole_T_Waist, q, *model_ptr);
+
+
+
+
+
+    left_foot.reset(new Cartesian("left_foot", q, *model_ptr, "l_foot", "world"));
+    right_foot.reset(new Cartesian("right_foot", q, *model_ptr, "r_foot", "world"));
+    com.reset(new CoM(q, *model_ptr));
+    com->setLambda(0.1);
+
+
+    left_arm.reset(new Cartesian("left_arm", q, *(model_ptr.get()),
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
 
-    left_arm->setOrientationErrorGain(1.0);
+    left_arm->setLambda(0.1);
 
-    right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
+    right_arm.reset(new Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
-    right_arm->setOrientationErrorGain(1.0);
+    right_arm->setLambda(0.1);
 
     KDL::Frame F;
     right_arm->getActualPose(F);
@@ -79,7 +111,9 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
     vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
 
-    auto_stack = (left_arm + right_arm)/
+    auto_stack = (left_foot + right_foot)/
+                 (com)/
+                 (right_arm + left_arm)/
                  (postural)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
