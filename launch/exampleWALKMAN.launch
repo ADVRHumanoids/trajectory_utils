@@ -10,16 +10,16 @@
 </node>
 
 
-<arg name="base_link" value="Waist" />
+<arg name="base_link" value="l_sole" />
 <!-- arg name="left_arm_distal_link" value="LElb" /-->
-<arg name="right_arm_distal_link" value="RSoftHandLink" />
-<arg name="left_arm_distal_link" value="LSoftHandLink" />
-<arg name="dT" value="0.01" />
+<arg name="right_arm_distal_link" value="RSoftHand" />
+<arg name="left_arm_distal_link" value="LSoftHand" />
+<arg name="dT" value="0.005" />
 
 
 <!-- IK node -->
 <node pkg="trajectory_utils" type="exampleOpenSoT" name="ik_node" output="screen" >
- <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/bigman/configs/config_walkman.yaml" />
+ <param name="config_path" value="$(env ROBOTOLOGY_ROOT)/configs/ADVR_shared/bigman/configs/config_walkman_floating_base.yaml" />
  <param name="urdf_path"   value="$(find bigman_urdf)/urdf/bigman.urdf" />
  <param name="srdf_path"   value="$(find bigman_srdf)/srdf/bigman.srdf" />
  <param name="left_arm_distal_link"   value="$(arg left_arm_distal_link)" />
@@ -32,6 +32,12 @@
        LElbj: -1.3962634015954636
        RShLat: -0.17453292519943295
        RElbj: -1.3962634015954636
+       RHipSag: -0.3
+       RKneeSag: 0.6
+       RAnkSag: -0.3
+       LHipSag: -0.3
+       LKneeSag: 0.6
+       LAnkSag: -0.3
 </rosparam>
 </node>
 

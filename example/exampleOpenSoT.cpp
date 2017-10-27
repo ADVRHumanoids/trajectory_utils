@@ -13,6 +13,12 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <XBotInterface/ModelInterface.h>
 
+#include <XBotInterface/Logger.hpp>
+
+#include <OpenSoT/SubTask.h>
+
+XBot::MatLogger::Ptr _logger;
+
 trajectory_utils::CartesianTrj left_arm_trj;
 trajectory_utils::CartesianTrj right_arm_trj;
 
@@ -32,10 +38,12 @@ OpenSoT::tasks::velocity::CoM::Ptr com;
 OpenSoT::tasks::velocity::Postural::Ptr postural;
 OpenSoT::constraints::velocity::JointLimits::Ptr joint_lims;
 OpenSoT::constraints::velocity::VelocityLimits::Ptr vel_lims;
+OpenSoT::tasks::velocity::Cartesian::Ptr waist;
 std::string left_arm_distal_link, left_arm_base_link;
 std::string right_arm_distal_link, right_arm_base_link;
 ros::Publisher joint_trajectory_desired_pub;
 std::string tf_prefix;
+
 
 
 
@@ -75,31 +83,61 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 
     setWorld(l_sole_T_Waist, q, *model_ptr);
 
+    std::vector<bool> active_joints(model_ptr->getJointNum(), true);
+    active_joints[model_ptr->getDofIndex(model_ptr->chain("torso").getJointId(0))] = false;
+    active_joints[model_ptr->getDofIndex(model_ptr->chain("torso").getJointId(1))] = false;
 
-    left_foot.reset(new Cartesian("left_foot", q, *model_ptr, "l_foot", "world"));
-    left_foot->setLambda(0.0);
-    right_foot.reset(new Cartesian("right_foot", q, *model_ptr, "r_foot", "world"));
-    right_foot->setLambda(0.0);
+
+    left_foot.reset(new Cartesian("left_foot", q, *model_ptr, "l_sole", "world"));
+    left_foot->setActiveJointsMask(active_joints);
+
+    right_foot.reset(new Cartesian("right_foot", q, *model_ptr, "r_sole", "world"));
+    right_foot->setActiveJointsMask(active_joints);
+
     com.reset(new CoM(q, *model_ptr));
-    com->setLambda(0.0);
+    com->setActiveJointsMask(active_joints);
+    com->setLambda(0.1);
 
 
     left_arm.reset(new Cartesian("left_arm", q, *(model_ptr.get()),
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
-
-    left_arm->setLambda(0.0);
+    left_arm->setActiveJointsMask(active_joints);
+    left_arm->setLambda(0.1);
 
     right_arm.reset(new Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
-    right_arm->setLambda(0.0);
+    right_arm->setActiveJointsMask(active_joints);
+    right_arm->setLambda(0.1);
 
     KDL::Frame F;
     right_arm->getActualPose(F);
     trj_designer::Marker6DoFs::printPose("right arm initial pose", F);
 
+
+
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
+    postural->setLambda(0.1);
+    postural->setActiveJointsMask(active_joints);
+
+    std::list<unsigned int> neck_indices;
+    neck_indices.push_back(model_ptr->getDofIndex("NeckYawj"));
+    neck_indices.push_back(model_ptr->getDofIndex("NeckPitchj"));
+    OpenSoT::SubTask::Ptr joint_space_gaze(
+                new OpenSoT::SubTask(postural, neck_indices));
+
+    std::list<unsigned int> body_indices;
+    for(unsigned int i = 0; i < model_ptr->getJointNum(); ++i)
+    {
+       std::string joint_name = model_ptr->getJointByDofIndex(i)->getJointName();
+       if(joint_name.compare("NeckYawj")!= 0 && joint_name.compare("NeckPitchj")!= 0)
+         body_indices.push_back(model_ptr->getDofIndex(joint_name));
+    }
+   OpenSoT::SubTask::Ptr joint_space_body(
+               new OpenSoT::SubTask(postural, body_indices));
+   joint_space_body->setLambda(0.1);
+
 
 
 
@@ -107,16 +145,16 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     model_ptr->getJointLimits(qmin, qmax);
     joint_lims.reset(new OpenSoT::constraints::velocity::JointLimits(q, qmax, qmin));
 
-    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(M_PI, dT, q.size()));
+    vel_lims.reset(new OpenSoT::constraints::velocity::VelocityLimits(2.0, dT, q.size()));
 
     auto_stack = (left_foot + right_foot)/
-                 (com)/
+                 (com + joint_space_gaze)/
                  (right_arm + left_arm)/
-                 (postural)<<joint_lims<<vel_lims;
+                 (joint_space_body)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e1));
+                                                  auto_stack->getBounds(), 1e11));
 
     if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
@@ -274,9 +312,17 @@ int main(int argc, char *argv[])
     ros::ServiceServer service3 = nh.advertiseService("/reset", service_cb3);
 
 
+
+    _logger = XBot::MatLogger::getLogger("/tmp/exampleOpenSoT");
+    _logger->add("q",q);
+
+
+    double tic,toc;
     ROS_INFO("Running example_open_sot_node");
     while(ros::ok())
     {
+        tic = ros::Time::now().nsec;
+
         KDL::Frame l_goal; l_goal.Identity();
         KDL::Frame r_goal; r_goal.Identity();
         KDL::Twist vl_goal; vl_goal.Zero();
@@ -284,6 +330,8 @@ int main(int argc, char *argv[])
 
         if(solve)
         {
+
+
             if(left_arm_trj.frames.size() > 0){
                 left_counter++;
                 if(left_counter < left_arm_trj.frames.size()){
@@ -294,7 +342,7 @@ int main(int argc, char *argv[])
                     tf::TwistMsgToKDL(v, vl_goal);
 
 
-                    left_arm->setReference(l_goal, vl_goal*dT);
+                    left_arm->setReference(l_goal);
                 }
             }
 
@@ -307,7 +355,7 @@ int main(int argc, char *argv[])
                     tf::PoseMsgToKDL(p.pose, r_goal);
                     tf::TwistMsgToKDL(v, vr_goal);
 
-                    right_arm->setReference(r_goal, vr_goal*dT);
+                    right_arm->setReference(r_goal);
                 }
             }
 
@@ -326,7 +374,10 @@ int main(int argc, char *argv[])
             model_ptr->setJointPosition(q);
             model_ptr->update();
 
+            postural->update(q);
             auto_stack->update(q);
+
+
 
             if(solver->solve(dq)){
                 q+=dq;
@@ -334,7 +385,16 @@ int main(int argc, char *argv[])
                 dqd.push_back(dq);}
             else
                 ROS_ERROR("Solver error!!!");
+
+
         }
+
+
+
+
+        toc = ros::Time::now().nsec;
+        _logger->add("dt",(toc-tic)/1e9);
+        _logger->add("q",q);
 
         publishJointState(q, dq, model_ptr, joint_pub);
         ros::spinOnce();
