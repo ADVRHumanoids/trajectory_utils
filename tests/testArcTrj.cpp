@@ -1,4 +1,3 @@
-#include <advr_humanoids_common_utils/test_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
 #include <fstream>
@@ -116,6 +115,27 @@ public:
 
 };
 
+/**
+ * @brief KDLFramesAreEqual perform GTEST check in 2 frames
+ * @param a first frame
+ * @param b second frame
+ */
+static inline void KDLFramesAreEqual(const KDL::Frame& a, const KDL::Frame& b,
+                                     const double near = 1e-10)
+{
+    EXPECT_NEAR(a.p.x(), b.p.x(), near);
+    EXPECT_NEAR(a.p.y(), b.p.y(), near);
+    EXPECT_NEAR(a.p.z(), b.p.z(), near);
+
+    double x,y,z,w; a.M.GetQuaternion(x,y,z,w);
+    double xx,yy,zz,ww; b.M.GetQuaternion(xx,yy,zz,ww);
+
+    EXPECT_NEAR(x,xx, near);
+    EXPECT_NEAR(y,yy, near);
+    EXPECT_NEAR(z,zz, near);
+    EXPECT_NEAR(w,ww, near);
+}
+
 TEST_F(testArcTrj, testArcTrj2_)
 {
     this->circle_center[0] = 0.0;
@@ -172,7 +192,7 @@ TEST_F(testArcTrj, testArcTrj_)
     expected_final_pose.M.GetRPY(R, P, Y);
     std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
 
-    tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
+    KDLFramesAreEqual(final_pose,expected_final_pose);
 
     for(double t = 0.0; t <= this->trj.Duration(); t+=dt){
         this->trj.updateTrj();
@@ -205,7 +225,7 @@ TEST_F(testArcTrj, testCreateArcPath2)
     expected_final_pose.p.y(2.);
     expected_final_pose.p.z(0.);
 
-    tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
+    KDLFramesAreEqual(final_pose,expected_final_pose);
 
     for(unsigned int i = 0; i < int(arc_path->PathLength()*100); ++i)
         this->logFrame(arc_path->Pos(i/100.));
@@ -236,7 +256,7 @@ TEST_F(testArcTrj, testCreateArcPath)
     expected_final_pose.p.y(1.);
     expected_final_pose.p.z(-1.);
 
-    tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
+    KDLFramesAreEqual(final_pose,expected_final_pose);
 
     for(unsigned int i = 0; i < int(arc_path->PathLength()*100); ++i)
         this->logFrame(arc_path->Pos(i/100.));
@@ -265,7 +285,7 @@ TEST_F(testArcTrj, testCreateArcPathNoRotation)
     expected_final_pose.p.y(1.);
     expected_final_pose.p.z(-1.);
 
-    tests_utils::KDLFramesAreEqual(final_pose,expected_final_pose);
+    KDLFramesAreEqual(final_pose,expected_final_pose);
 
     for(unsigned int i = 0; i < int(arc_path->PathLength()*100); ++i)
         this->logFrame(arc_path->Pos(i/100.));

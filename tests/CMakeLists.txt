@@ -15,8 +15,6 @@ if (NOT GTEST_FOUND)
     set(GTEST_BOTH_LIBRARIES gtest gtest_main)
 endif()
 
-find_package(test_utils)
-
 include_directories(${GTEST_INCLUDE_DIRS})
 link_directories(${GTEST_LIB_DIRS})
 
@@ -37,8 +35,7 @@ add_custom_command( TARGET trajectory_utils POST_BUILD
 
 
 SET(TestLibs trajectory_utils ${GTEST_BOTH_LIBRARIES}
-    ${orocos_kdl_LIBRARIES} ${kdl_parser_LIBRARIES}
-    ${test_utils_LIBRARIES})
+    ${orocos_kdl_LIBRARIES} ${kdl_parser_LIBRARIES})
 
 ADD_EXECUTABLE(testLinearTrj     testLinearTrj.cpp)
 TARGET_LINK_LIBRARIES(testLinearTrj ${TestLibs})

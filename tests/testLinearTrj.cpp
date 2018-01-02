@@ -1,4 +1,3 @@
-#include <advr_humanoids_common_utils/test_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
 #include <fstream>
@@ -135,6 +134,27 @@ public:
 
 };
 
+/**
+ * @brief KDLFramesAreEqual perform GTEST check in 2 frames
+ * @param a first frame
+ * @param b second frame
+ */
+static inline void KDLFramesAreEqual(const KDL::Frame& a, const KDL::Frame& b,
+                                     const double near = 1e-10)
+{
+    EXPECT_NEAR(a.p.x(), b.p.x(), near);
+    EXPECT_NEAR(a.p.y(), b.p.y(), near);
+    EXPECT_NEAR(a.p.z(), b.p.z(), near);
+
+    double x,y,z,w; a.M.GetQuaternion(x,y,z,w);
+    double xx,yy,zz,ww; b.M.GetQuaternion(xx,yy,zz,ww);
+
+    EXPECT_NEAR(x,xx, near);
+    EXPECT_NEAR(y,yy, near);
+    EXPECT_NEAR(z,zz, near);
+    EXPECT_NEAR(w,ww, near);
+}
+
 TEST_F(testLinearTrj, testNormalizeQuaternion)
 {
     double x_start, y_start, z_start, w_start;
@@ -208,7 +228,7 @@ TEST_F(testLinearTrj, testTrajectoryGenerator){
     EXPECT_DOUBLE_EQ(this->trj.Duration(), T);
 
     KDL::Frame pose = this->trj.Pos(0.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[0]);
+    KDLFramesAreEqual(pose, this->way_points[0]);
 
     for(unsigned int i = 0; i < 1000-1; ++i){
         this->trj.updateTrj();
@@ -222,10 +242,10 @@ TEST_F(testLinearTrj, testTrajectoryGenerator){
     EXPECT_TRUE(this->trj.isFinished());
 
     pose = this->trj.Pos();
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[1]);
+    KDLFramesAreEqual(pose, this->way_points[1]);
 
     pose = this->trj.Pos(1.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[1]);
+    KDLFramesAreEqual(pose, this->way_points[1]);
 }
 
 TEST_F(testLinearTrj, test2Lines){
@@ -237,13 +257,13 @@ TEST_F(testLinearTrj, test2Lines){
     EXPECT_DOUBLE_EQ(this->trj.Duration(), 2.*T);
 
     KDL::Frame pose = this->trj.Pos(0.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[0]);
+    KDLFramesAreEqual(pose, this->way_points[0]);
 
     pose = this->trj.Pos(1.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[1]);
+    KDLFramesAreEqual(pose, this->way_points[1]);
 
     pose = this->trj.Pos(2.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[2]);
+    KDLFramesAreEqual(pose, this->way_points[2]);
 
     this->trj.resetTrajectory();
     std::vector<KDL::Frame> way_points;
@@ -253,13 +273,13 @@ TEST_F(testLinearTrj, test2Lines){
     EXPECT_TRUE(this->trj.addLineTrj(way_points, T));
 
     pose = this->trj.Pos(0.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[0]);
+    KDLFramesAreEqual(pose, this->way_points[0]);
 
     pose = this->trj.Pos(1.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[1]);
+    KDLFramesAreEqual(pose, this->way_points[1]);
 
     pose = this->trj.Pos(2.0);
-    tests_utils::KDLFramesAreEqual(pose, this->way_points[2]);
+    KDLFramesAreEqual(pose, this->way_points[2]);
 
     this->trj.resetInternalTime();
     for(unsigned int i = 0; i < 2000; ++i)

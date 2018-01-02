@@ -1,4 +1,3 @@
-#include <advr_humanoids_common_utils/test_utils.h>
 #include <gtest/gtest.h>
 #include <trajectory_utils/trajectory_utils.h>
 #include <fstream>
@@ -59,6 +58,27 @@ public:
 
 };
 
+    /**
+     * @brief KDLFramesAreEqual perform GTEST check in 2 frames
+     * @param a first frame
+     * @param b second frame
+     */
+    static inline void KDLFramesAreEqual(const KDL::Frame& a, const KDL::Frame& b,
+                                         const double near = 1e-10)
+    {
+        EXPECT_NEAR(a.p.x(), b.p.x(), near);
+        EXPECT_NEAR(a.p.y(), b.p.y(), near);
+        EXPECT_NEAR(a.p.z(), b.p.z(), near);
+
+        double x,y,z,w; a.M.GetQuaternion(x,y,z,w);
+        double xx,yy,zz,ww; b.M.GetQuaternion(xx,yy,zz,ww);
+
+        EXPECT_NEAR(x,xx, near);
+        EXPECT_NEAR(y,yy, near);
+        EXPECT_NEAR(z,zz, near);
+        EXPECT_NEAR(w,ww, near);
+    }
+
     TEST_F(testSplineVelProfile, testMinJerkTrj)
     {
         KDL::Frame start; start.Identity();
@@ -74,12 +94,12 @@ public:
         this->trj.Pos(0).M.GetRPY(R, P, Y);
         std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
 
-        tests_utils::KDLFramesAreEqual(this->trj.Pos(0), start);
+        KDLFramesAreEqual(this->trj.Pos(0), start);
         std::cout<<"end: "<<std::endl;
         std::cout<<"[x: "<<this->trj.Pos(T).p.x()<<" y: "<<this->trj.Pos(T).p.y()<<" z: "<<this->trj.Pos(T).p.z()<<"]"<<std::endl;
         this->trj.Pos(T).M.GetRPY(R, P, Y);
         std::cout<<"[ROLL: "<<R<<" PITCH: "<<P<<" YAW: "<<Y<<"]"<<std::endl;
-        tests_utils::KDLFramesAreEqual(this->trj.Pos(T), end);
+        KDLFramesAreEqual(this->trj.Pos(T), end);
 
         EXPECT_DOUBLE_EQ(this->trj.Duration(), T);
     }
