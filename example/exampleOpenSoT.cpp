@@ -57,20 +57,12 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
                                                            left_arm_distal_link,
                                                            left_arm_base_link));
 
-    left_arm->setOrientationErrorGain(1.0);
 
     right_arm.reset(new OpenSoT::tasks::velocity::Cartesian("right_arm", q, *(model_ptr.get()),
                                                             right_arm_distal_link,
                                                             right_arm_base_link));
-    right_arm->setOrientationErrorGain(1.0);
 
-    KDL::Frame F;
-    right_arm->getActualPose(F);
-    trj_designer::Marker6DoFs::printPose("right arm initial pose", F);
-
-    right_arm->setOrientationErrorGain(1.0);
     postural.reset(new OpenSoT::tasks::velocity::Postural(q));
-
 
 
     Eigen::VectorXd qmin, qmax;
@@ -84,7 +76,7 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     auto_stack->update(q);
 
     solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e10));
+                                                  auto_stack->getBounds(), 1e5));
 
     if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
@@ -258,8 +250,8 @@ int main(int argc, char *argv[])
                     geometry_msgs::PoseStamped p = left_arm_trj.frames[left_counter].frame;
                     geometry_msgs::Twist v = left_arm_trj.twists[left_counter];
 
-                    tf::PoseMsgToKDL(p.pose, l_goal);
-                    tf::TwistMsgToKDL(v, vl_goal);
+                    tf::poseMsgToKDL(p.pose, l_goal);
+                    tf::twistMsgToKDL(v, vl_goal);
 
 
                     left_arm->setReference(l_goal, vl_goal*dT);
@@ -272,8 +264,8 @@ int main(int argc, char *argv[])
                     geometry_msgs::PoseStamped p = right_arm_trj.frames[right_counter].frame;
                     geometry_msgs::Twist v = right_arm_trj.twists[right_counter];
 
-                    tf::PoseMsgToKDL(p.pose, r_goal);
-                    tf::TwistMsgToKDL(v, vr_goal);
+                    tf::poseMsgToKDL(p.pose, r_goal);
+                    tf::twistMsgToKDL(v, vr_goal);
 
                     right_arm->setReference(r_goal, vr_goal*dT);
                 }
