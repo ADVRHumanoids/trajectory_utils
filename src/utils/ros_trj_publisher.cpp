@@ -19,9 +19,6 @@ trajectory_publisher::trajectory_publisher(const std::string& topic_name)
 void trajectory_publisher::deleteAllMarkersAndTrj()
 {
     if(_has_traj){
-        _visual_tools->deleteAllMarkers();
-
-
         _trj_msg.poses.clear();
         _trj_msg.header.stamp = ros::Time::now();
 
@@ -42,32 +39,15 @@ void trajectory_publisher::publish(bool delete_visual_tools)
 {
     if(delete_visual_tools)
     {
-        _visual_tools->deleteAllMarkers();
-
         nav_msgs::Path tmp;
         tmp.header.frame_id = _frame;
         tmp.header.stamp = ros::Time::now();
         _trj_publisher.publish(tmp);
     }
 
-    _visual_tools->enableBatchPublishing(true);
-
     _trj_msg.header.frame_id = _frame;
     _trj_msg.header.stamp = ros::Time::now();
     _trj_publisher.publish(_trj_msg);
-
-    _visual_tools->publishAxisLabeled(_trj_msg.poses[0].pose, "start",
-            rviz_visual_tools::LARGE);
-    for(unsigned int i = 0; i < _trj_msg.poses.size(); i += _decimation2)
-        _visual_tools->publishAxis(_trj_msg.poses[i].pose, 0.1, 0.01);
-    _visual_tools->publishAxisLabeled(_trj_msg.poses[_trj_msg.poses.size()-1].pose, "end",
-            rviz_visual_tools::LARGE);
-
-#if ROS_VERSION_MINIMUM(1,12,7) //Kinetic
-    _visual_tools->triggerAndDisable();
-#else
-    _visual_tools->triggerBatchPublishAndDisable();
-#endif
 }
 
 void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Composite> trj,
@@ -75,8 +55,6 @@ void trajectory_publisher::setTrj(const boost::shared_ptr<KDL::Trajectory_Compos
                                   const std::string& distal_frame)
 {
     _frame = base_frame;
-
-    _visual_tools.reset(new rviz_visual_tools::RvizVisualTools(_frame,"/trj_visual_markers_"+_frame+"_to_"+distal_frame));
 
     _trj_msg.poses.clear();
 

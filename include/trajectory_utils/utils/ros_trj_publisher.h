@@ -83,9 +83,6 @@ private:
 
     std::string _frame;
 
-    rviz_visual_tools::RvizVisualToolsPtr _visual_tools;
-
-
     double _decimation;
     int _decimation2;
 
