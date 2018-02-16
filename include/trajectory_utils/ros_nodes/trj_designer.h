@@ -844,31 +844,35 @@ public:
     bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
         std::vector<segment_trj> segments =  _trj.getTrajSegments();
-
-        setSegments(segments);
-
-        _trj_gen.reset(new trajectory_utils::trajectory_generator(
-                           _trj.getTime(),
-                           _trj.getBaseLink(), _trj.getDistalLink()));
-        for(unsigned int i = 0; i < segments.size(); ++i)
+        if(segments.size() > 0)
         {
-            segment_trj trj = segments[i];
 
-            if(trj.type == trj_designer::trj_type::MIN_JERK){
-                _trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
+            setSegments(segments);
+
+            _trj_gen.reset(new trajectory_utils::trajectory_generator(
+                               _trj.getTime(),
+                               _trj.getBaseLink(), _trj.getDistalLink()));
+            for(unsigned int i = 0; i < segments.size(); ++i)
+            {
+                segment_trj trj = segments[i];
+
+                if(trj.type == trj_designer::trj_type::MIN_JERK){
+                    _trj_gen->addMinJerkTrj(trj.start, trj.end, trj.T);
+                }
+                else if(trj.type == trj_designer::trj_type::SEMI_CIRCLE){
+                    _trj_gen->addArcTrj(trj.start, trj.end_rot, trj.angle_rot,
+                                       trj.circle_center, trj.plane_normal, trj.T);
+                }
             }
-            else if(trj.type == trj_designer::trj_type::SEMI_CIRCLE){
-                _trj_gen->addArcTrj(trj.start, trj.end_rot, trj.angle_rot,
-                                   trj.circle_center, trj.plane_normal, trj.T);
-            }
+
+            setTrj();
+
+            _pub.publish(_msg);
+            _pub2.publish(_msg2);
+
+            return true;
         }
-
-        setTrj();
-
-        _pub.publish(_msg);
-        _pub2.publish(_msg2);
-
-        return true;
+        return false;
     }
 
     void setSegments(std::vector<segment_trj>& segments)
