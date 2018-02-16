@@ -1,6 +1,6 @@
 <launch>
 
- <param name="robot_description" command="$(find xacro)/xacro.py '$(find bigman_urdf)/urdf/bigman.urdf'" />
+ <param name="robot_description" command="$(find xacro)/xacro.py '$(find walkman_urdf)/urdf/walkman.urdf'" />
 
 <arg name="base_link" value="world_odom" />
 <arg name="right_arm_distal_link" value="RSoftHand" />
