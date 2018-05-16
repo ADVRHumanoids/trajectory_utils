@@ -22,7 +22,7 @@ std::vector<Eigen::VectorXd> qd;
 Eigen::VectorXd q0;
 Eigen::VectorXd dq;
 std::vector<Eigen::VectorXd> dqd;
-OpenSoT::solvers::QPOases_sot::Ptr solver;
+OpenSoT::solvers::iHQP::Ptr solver;
 XBot::ModelInterface::Ptr model_ptr;
 OpenSoT::tasks::velocity::Cartesian::Ptr left_arm;
 OpenSoT::tasks::velocity::Cartesian::Ptr right_arm;
@@ -75,8 +75,7 @@ bool service_cb(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
                  (postural)<<joint_lims<<vel_lims;
     auto_stack->update(q);
 
-    solver.reset(new OpenSoT::solvers::QPOases_sot(auto_stack->getStack(),
-                                                  auto_stack->getBounds(), 1e5));
+    solver.reset(new OpenSoT::solvers::iHQP(auto_stack->getStack(), auto_stack->getBounds(), 1e5));
 
     if(left_arm_trj.frames.size() > 0){
         left_counter = -1;
